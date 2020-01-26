@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Joseph Petitti CS 4731 Project 1</title>
+    <script id="vshader" type="x-shader/x-vertex">
+      attribute vec4 vPosition;
+      attribute vec4 vColor;
+      uniform float vPointSize;
+      varying vec4 fColor;
+      void main() {
+        gl_Position = vPosition;
+        gl_PointSize = vPointSize;
+        fColor = vColor;
+      }
+    </script>
+    <script id="fshader" type="x-shader/x-fragment">
+      precision mediump float;
+      varying vec4 fColor;
+      void main() {
+        gl_FragColor = fColor;
+      }
+    </script>
+    <script src="bundle.js"></script>
+  </head>
+
+  <body>
+    <canvas id="webgl" width="800" height="400">
+      Your browser doesn't support the canvas tag
+    </canvas>
+  </body>
+</html>
