@@ -8,7 +8,7 @@
     "lint": "eslint 'src/**/*' --ext .js,.ts --quiet --fix",
     "prebuild": "npm run lint",
     "compile": "tsc",
-    "bundle": "browserify -vd dist/project1/main.js -o project1/bundle.js",
+    "bundle": "browserify -vd build/project1/main.js -o dist/project1/bundle.js",
     "build": "npm run compile && npm run bundle"
   },
   "repository": {
