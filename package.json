@@ -7,8 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint 'src/**/*' --ext .js,.ts --quiet --fix",
     "prebuild": "npm run lint",
-    "build": "tsc",
-    "bundle": "browserify -vd dist/project1/main.js -o project1/bundle.js"
+    "compile": "tsc",
+    "bundle": "browserify -vd dist/project1/main.js -o project1/bundle.js",
+    "build": "npm run compile && npm run bundle"
   },
   "repository": {
     "type": "git",
