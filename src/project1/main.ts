@@ -10,9 +10,40 @@ function flatten<T>(arr: T[][]): T[] {
   return new Array<T>().concat(...arr);
 }
 
+/**
+ * create a <canvas> element and add it to the #container
+ * @return the created canvas
+ */
+function createCanvas(): HTMLCanvasElement {
+  // remove any existing canvas
+  document.getElementById("webgl")?.remove();
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 400;
+  canvas.id = "webgl";
+  document.getElementById("container")?.appendChild(canvas);
+  return canvas;
+}
+
+/**
+ * create an <input type="file"> element and add it to #container
+ * @return the created input element
+ */
+function createFileInput(): HTMLInputElement {
+  // remove any existing input
+  document.getElementById("file-upload")?.remove();
+  const input = document.createElement("input");
+  input.type = "file";
+  input.id = "file-upload";
+  document.getElementById("container")?.appendChild(input);
+  return input;
+}
+
 function main(): void {
-  // retrieve the <canvas> element
-  const canvas = document.getElementById("webgl") as HTMLCanvasElement;
+  // create the <canvas> element
+  const canvas = createCanvas();
+  // create the file upload input
+  const input = createFileInput();
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
