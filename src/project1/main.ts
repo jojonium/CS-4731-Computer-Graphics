@@ -1,5 +1,6 @@
 import { setupWebGL } from "./lib/webgl-utils";
 import { initShaders } from "./lib/initShaders";
+import { createFileInput } from "./fileMode";
 import vec4 from "./lib/tsm/vec4";
 
 /**
@@ -23,20 +24,6 @@ function createCanvas(): HTMLCanvasElement {
   canvas.id = "webgl";
   document.getElementById("container")?.appendChild(canvas);
   return canvas;
-}
-
-/**
- * create an <input type="file"> element and add it to #container
- * @return the created input element
- */
-function createFileInput(): HTMLInputElement {
-  // remove any existing input
-  document.getElementById("file-upload")?.remove();
-  const input = document.createElement("input");
-  input.type = "file";
-  input.id = "file-upload";
-  document.getElementById("container")?.appendChild(input);
-  return input;
 }
 
 function main(): void {
