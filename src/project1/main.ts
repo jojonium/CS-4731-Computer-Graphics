@@ -1,6 +1,6 @@
 import { setupWebGL } from "./lib/webgl-utils";
 import { initShaders } from "./lib/initShaders";
-import { createFileInput } from "./fileMode";
+import { createFileInput, getInput, parseFileText } from "./fileMode";
 import vec4 from "./lib/tsm/vec4";
 
 /**
@@ -104,6 +104,10 @@ function main(): void {
 
   window.addEventListener("click", () => {
     gl.clear(gl.COLOR_BUFFER_BIT);
+  });
+
+  input.addEventListener("change", () => {
+    getInput(input).then(parseFileText);
   });
 }
 
