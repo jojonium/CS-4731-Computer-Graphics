@@ -1,4 +1,4 @@
-import vec2 from "./lib/tsm/vec2";
+import vec4 from "./lib/tsm/vec4";
 
 /**
  * create an <input type="file"> element and add it to #container
@@ -50,10 +50,10 @@ export const parseFileText = (
   str: string
 ): Promise<{
   extents: [number, number, number, number];
-  polylines: vec2[][];
+  polylines: vec4[][];
 }> => {
   return new Promise(resolve => {
-    const lines = str.split("\n");
+    const lines = str.split("\n").filter(s => s !== "");
     // string can start comment number of lines followed by a row of asterisks
     let start = 0;
     for (let i = 0; i < lines.length; ++i) {
@@ -62,7 +62,7 @@ export const parseFileText = (
         break;
       }
     }
-    let extents = [0, 0, 1, 1]; // default extents
+    let extents = [0, 640, 0, 480]; // default extents
 
     // first line after the asterisks contains the extents of the figure
     if (start !== 0) {
@@ -80,9 +80,9 @@ export const parseFileText = (
       throw new Error("Parse error: invalid number of polylines");
     }
 
-    const polylines = new Array<vec2[]>(numPolylines);
+    const polylines = new Array<vec4[]>(numPolylines);
     for (let i = 0; i < numPolylines; ++i) {
-      polylines[i] = new Array<vec2>();
+      polylines[i] = new Array<vec4>();
     }
     let numPoints = 0;
     let p = -1; // polyline index
@@ -94,13 +94,15 @@ export const parseFileText = (
       } else {
         // reading a point
         polylines[p].push(
-          new vec2(
-            lines[i]
+          new vec4([
+            ...lines[i]
               .split(/\s+/)
               .map(parseFloat)
               .filter(n => !isNaN(n))
-              .slice(0, 2) as [number, number]
-          )
+              .slice(0, 2),
+            0.0,
+            1.0
+          ] as [number, number, number, number])
         );
         numPoints--;
       }

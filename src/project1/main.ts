@@ -26,6 +26,49 @@ function createCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
+/**
+ * sets canvas size and draws polylines
+ * @param gl the WebGL rendering context to draw on
+ * @param program the WebGL program to use
+ * @param the extents of the world as [left, top, right bottom]
+ * @param polylines each element of this array is a polyline, made up of many
+ * points expressed as vec2s
+ */
+const drawPolylines = (
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  extents: [number, number, number, number],
+  polylines: vec4[][]
+): void => {
+  // set the view port
+  // TODO use viewport() and ortho() to correctly scale the canvas to the size
+  // of the figure
+  gl.viewport(0, 0, 640, 480);
+
+  // set clear color as white and clear the canvas
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // create new vertex buffer
+  const vBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+
+  // pass vertex data to the buffer
+  for (const vecs of polylines) {
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      Float32Array.from(flatten(vecs.map(p => p.xyzw))),
+      gl.STATIC_DRAW
+    );
+    const vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.enableVertexAttribArray(vPosition);
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+
+    // draw the lines
+    gl.drawArrays(gl.LINE_STRIP, 0, vecs.length);
+  }
+};
+
 function main(): void {
   // create the <canvas> element
   const canvas = createCanvas();
@@ -43,73 +86,12 @@ function main(): void {
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
-  // set up the viewport
-  gl.viewport(0, 0, canvas.width, canvas.height);
-
-  const points = [
-    new vec4([-0.5, -0.5, 0.0, 1.0]),
-    new vec4([0.5, -0.5, 0.0, 1.0]),
-    new vec4([0.0, 0.5, 0.0, 1.0])
-  ];
-
-  const vBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    Float32Array.from(flatten(points.map(p => p.xyzw))),
-    gl.STATIC_DRAW
-  );
-
-  const vPosition = gl.getAttribLocation(program, "vPosition");
-  gl.enableVertexAttribArray(vPosition);
-  gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-
-  const colors = [
-    new vec4([1.0, 0.0, 0.0, 1.0]),
-    new vec4([0.0, 1.0, 0.0, 1.0]),
-    new vec4([0.0, 0.0, 1.0, 1.0])
-  ];
-
-  const cBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    Float32Array.from(flatten(colors.map(c => c.xyzw))),
-    gl.STATIC_DRAW
-  );
-
-  const vColor = gl.getAttribLocation(program, "vColor");
-  gl.enableVertexAttribArray(vColor);
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-
-  const vPointSize = gl.getUniformLocation(program, "vPointSize");
-  gl.uniform1f(vPointSize, 20.0);
-
-  // set clear color
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.drawArrays(gl.TRIANGLES, 0, points.length);
-
-  window.addEventListener("keydown", ev => {
-    const key = ev.key;
-    if (key === "a") {
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINTS, 0, points.length);
-    } else if (key === "s") {
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, points.length);
-    }
-  });
-
-  window.addEventListener("click", () => {
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  });
-
   input.addEventListener("change", () => {
     getInput(input)
       .then(parseFileText)
-      .then(console.log)
+      .then(args => {
+        drawPolylines(gl, program, args.extents, args.polylines);
+      })
       .catch(err => {
         console.error(err);
       });
