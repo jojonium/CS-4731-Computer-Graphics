@@ -107,7 +107,12 @@ function main(): void {
   });
 
   input.addEventListener("change", () => {
-    getInput(input).then(parseFileText);
+    getInput(input)
+      .then(parseFileText)
+      .then(console.log)
+      .catch(err => {
+        console.error(err);
+      });
   });
 }
 

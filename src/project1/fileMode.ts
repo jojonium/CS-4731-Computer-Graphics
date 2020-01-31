@@ -41,62 +41,73 @@ export const getInput = (elt: HTMLInputElement): Promise<string> => {
   });
 };
 
+/**
+ * parses the text of an input file and returns the dimensions and polylines of
+ * the figure in a promise
+ * @param str the input file's text as a string
+ */
 export const parseFileText = (
   str: string
-): { extents: [number, number, number, number]; polylines: vec2[][] } => {
-  const lines = str.split("\n");
-  // the string can start comment number of lines followed by a row of asterisks
-  let start = 0;
-  for (let i = 0; i < lines.length; ++i) {
-    if (lines[i].substring(0, 1) === "*") {
-      start = i + 1;
-      break;
+): Promise<{
+  extents: [number, number, number, number];
+  polylines: vec2[][];
+}> => {
+  return new Promise(resolve => {
+    const lines = str.split("\n");
+    // string can start comment number of lines followed by a row of asterisks
+    let start = 0;
+    for (let i = 0; i < lines.length; ++i) {
+      if (lines[i].substring(0, 1) === "*") {
+        start = i + 1;
+        break;
+      }
     }
-  }
-  let extents = [0, 0, 1, 1]; // default extents
+    let extents = [0, 0, 1, 1]; // default extents
 
-  // first line after the asterisks contains the extents of the figure
-  if (start !== 0) {
-    extents = lines[start]
-      .split(/\s+/)
-      .map(parseFloat)
-      .slice(0, 4);
+    // first line after the asterisks contains the extents of the figure
+    if (start !== 0) {
+      extents = lines[start]
+        .split(/\s+/)
+        .map(parseFloat)
+        .slice(0, 4);
+      start++;
+    }
+
+    // next line after that is the list of polylines in the figure
+    const numPolylines = Math.floor(parseFloat(lines[start]));
     start++;
-  }
-
-  // next line after that is the list of polylines in the figure
-  const numPolylines = Math.floor(parseFloat(lines[start]));
-  start++;
-  if (isNaN(numPolylines) || numPolylines < 1) {
-    throw new Error("Parse error: invalid number of polylines");
-  }
-
-  const polylines = new Array<vec2[]>(numPolylines);
-  for (let i = 0; i < numPolylines; ++i) {
-    polylines[i] = new Array<vec2>();
-  }
-  let numPoints = 0;
-  let p = -1; // polyline index
-  for (let i = start; start < lines.length && p < numPolylines; ++i) {
-    if (numPoints === 0) {
-      // reading number of points in this polyline
-      numPoints = Math.floor(parseFloat(lines[i]));
-      p++;
-    } else {
-      // reading a point
-      polylines[p].push(
-        new vec2(
-          lines[i]
-            .split(/\s+/)
-            .map(parseFloat)
-            .slice(0, 2) as [number, number]
-        )
-      );
-      numPoints--;
+    if (isNaN(numPolylines) || numPolylines < 1) {
+      throw new Error("Parse error: invalid number of polylines");
     }
-  }
-  return {
-    extents: extents as [number, number, number, number],
-    polylines: polylines
-  };
+
+    const polylines = new Array<vec2[]>(numPolylines);
+    for (let i = 0; i < numPolylines; ++i) {
+      polylines[i] = new Array<vec2>();
+    }
+    let numPoints = 0;
+    let p = -1; // polyline index
+    for (let i = start; start < lines.length && p < numPolylines; ++i) {
+      if (numPoints === 0) {
+        // reading number of points in this polyline
+        numPoints = Math.floor(parseFloat(lines[i]));
+        p++;
+      } else {
+        // reading a point
+        polylines[p].push(
+          new vec2(
+            lines[i]
+              .split(/\s+/)
+              .map(parseFloat)
+              .filter(n => !isNaN(n))
+              .slice(0, 2) as [number, number]
+          )
+        );
+        numPoints--;
+      }
+    }
+    resolve({
+      extents: extents as [number, number, number, number],
+      polylines: polylines
+    });
+  });
 };
