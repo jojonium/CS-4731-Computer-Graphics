@@ -9,7 +9,8 @@
     "prebuild": "npm run lint",
     "compile": "tsc",
     "bundle": "browserify -vd build/project1/main.js -o dist/project1/bundle.js",
-    "build": "npm run compile && npm run bundle"
+    "build": "npm run compile && npm run bundle",
+    "watch": "watchify -vd build/project1/main.js -o dist/project1/bundle.js & tsc --watch"
   },
   "repository": {
     "type": "git",
@@ -29,6 +30,7 @@
     "eslint-config-prettier": "^6.9.0",
     "eslint-plugin-prettier": "^3.1.2",
     "prettier": "^1.19.1",
-    "typescript": "^3.7.4"
+    "typescript": "^3.7.4",
+    "watchify": "^3.11.1"
   }
 }
