@@ -29,6 +29,7 @@ const createCanvas = (): HTMLCanvasElement => {
 
 /**
  * sets canvas size and draws polylines
+ * @param canvas the canvas element to draw on
  * @param gl the WebGL rendering context to draw on
  * @param program the WebGL program to use
  * @param the extents of the world as [left, top, right bottom]
@@ -36,27 +37,71 @@ const createCanvas = (): HTMLCanvasElement => {
  * points expressed as vec2s
  */
 const drawPolylines = (
+  canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
   extents: [number, number, number, number],
   polylines: vec4[][]
 ): void => {
-  // set the view port
-  const projMatrix = mat4.orthographic(
-    extents[0],
-    extents[1],
-    extents[2],
-    extents[3],
-    -1.0,
-    1.0
-  );
-  console.log(extents);
+  // set default view port and canvas size
+  canvas.width = 640;
+  canvas.height = 480;
   const projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
+  let projMatrix = mat4.orthographic(0, 640, 0, 480, -1.0, 1.0);
   gl.uniformMatrix4fv(
     projMatrixLoc,
     false,
     Float32Array.from(projMatrix.all())
   );
+  gl.viewport(0, 0, 640, 480);
+
+  // set the view port based on extents
+  console.log(extents);
+  projMatrix = mat4.orthographic(
+    extents[0],
+    extents[2],
+    extents[3],
+    extents[1],
+    -1.0,
+    1.0
+  );
+  gl.uniformMatrix4fv(
+    projMatrixLoc,
+    false,
+    Float32Array.from(projMatrix.all())
+  );
+  const w = extents[2] - extents[0];
+  const h = extents[1] - extents[3];
+  if (w < h) {
+    // image is taller than it is wide
+    canvas.height = 480;
+    canvas.width = (480 * w) / h;
+  } else {
+    // image is at least as wide as it is tall
+    canvas.width = 640;
+    canvas.height = (640 * h) / w;
+  }
+  gl.viewport(0, 0, canvas.width, canvas.height);
+
+  /*
+  const ratio = (extents[2] - extents[0]) / (extents[1] - extents[3]);
+  const w = canvas.width;
+  const h = canvas.height;
+  let newW = canvas.width;
+  let newH = canvas.height;
+
+  if (ratio > w / h) {
+    gl.viewport(0, 0, w, w / ratio);
+    newH = w / ratio;
+    newW = w;
+  } else if (ratio < w / h) {
+    gl.viewport(0, 0, h * ratio, h);
+    newH = h;
+    newW = h * ratio;
+  }
+  canvas.height = newH;
+  canvas.width = newW;
+  */
 
   // set clear color as white and clear the canvas
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -79,30 +124,6 @@ const drawPolylines = (
 
     // draw the lines
     gl.drawArrays(gl.LINE_STRIP, 0, vecs.length);
-  }
-};
-
-/**
- * scales canvas to fit the extents given, and sets the WebGL viewport
- * @param canvas the canvas to scale
- * @param gl the WebGL rendering context
- * @param extents the left, top, right, and bottom extents
- */
-const scaleCanvas = (
-  canvas: HTMLCanvasElement,
-  gl: WebGLRenderingContext,
-  extents: [number, number, number, number]
-): void => {
-  const w = extents[2] - extents[0];
-  const h = extents[1] - extents[3];
-  canvas.width = 800;
-  canvas.height = 800;
-  if (w > h) {
-    // height is the limiting factor
-    gl.viewport(0, 0, canvas.width, (h / w) * canvas.height);
-  } else {
-    // width is the limiting factor
-    gl.viewport(0, 0, (w / h) * canvas.width, canvas.height);
   }
 };
 
@@ -130,8 +151,7 @@ function main(): void {
     getInput(input)
       .then(parseFileText)
       .then(args => {
-        scaleCanvas(canvas, gl, args.extents);
-        drawPolylines(gl, program, args.extents, args.polylines);
+        drawPolylines(canvas, gl, program, args.extents, args.polylines);
       })
       .catch(err => {
         console.error(err);
