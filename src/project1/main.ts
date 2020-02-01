@@ -13,7 +13,7 @@ function flatten<T>(arr: T[][]): T[] {
 }
 
 /**
- * create a <canvas> element and add it to the #container
+ * create a <canvas> element and add it to the #canvas-container
  * @return the created canvas
  */
 const createCanvas = (): HTMLCanvasElement => {
@@ -23,24 +23,21 @@ const createCanvas = (): HTMLCanvasElement => {
   canvas.width = 640;
   canvas.height = 480;
   canvas.id = "webgl";
-  document.getElementById("container")?.appendChild(canvas);
+  document.getElementById("canvas-container")?.appendChild(canvas);
   return canvas;
 };
 
 /**
- * resets the canvas size and WebGL viewport to default values, then clears the
+ * resets the canvas size and WebGL viewport to default values, clears the
  * screen
  * @param canvas the canvas to clear
  * @param gl the WebGL rendering context of the canvas
  * @param program the WebGL program we're using
- * @param color the red, green, and blue components of the background color,
- * each from 0-1
  */
 const clearCanvas = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
-  program: WebGLProgram,
-  color: { r: number; g: number; b: number }
+  program: WebGLProgram
 ): void => {
   // set default view port and canvas size
   canvas.width = 640;
@@ -55,7 +52,6 @@ const clearCanvas = (
   gl.viewport(0, 0, 640, 480);
 
   // set clear color and clear the canvas
-  gl.clearColor(color.r, color.g, color.b, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 };
 
@@ -64,19 +60,22 @@ const clearCanvas = (
  * @param canvas the canvas element to draw on
  * @param gl the WebGL rendering context to draw on
  * @param program the WebGL program to use
- * @param the extents of the world as [left, top, right bottom]
  * @param polylines each element of this array is a polyline, made up of many
  * points expressed as vec4s
+ * @param color the red, green, and blue components of the color to use for
+ * drawing lines, each from 0-1
+ * @param extents extents of the world as [left, top, right bottom]
  */
 const drawPolylines = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
-  extents: [number, number, number, number],
-  polylines: vec4[][]
+  polylines: vec4[][],
+  color = { r: 1, g: 1, b: 1 },
+  extents: [number, number, number, number] = [0, 0.75, 1, 0]
 ): void => {
   // clear the drawing canvas and color it white
-  clearCanvas(canvas, gl, program, { r: 1, g: 1, b: 1 });
+  clearCanvas(canvas, gl, program);
   const projMatrix = mat4.orthographic(
     extents[0],
     extents[2],
@@ -103,6 +102,7 @@ const drawPolylines = (
     canvas.height = (640 * h) / w;
   }
   gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clear(gl.COLOR_BUFFER_BIT);
 
   // create new vertex buffer
   const vBuffer = gl.createBuffer();
@@ -119,6 +119,20 @@ const drawPolylines = (
     gl.enableVertexAttribArray(vPosition);
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
 
+    // pass color data to the buffer
+    const cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    const colorArray = new Array<[number, number, number, number]>(vecs.length);
+    colorArray.fill([color.r, color.g, color.b, 1.0]);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      Float32Array.from(flatten(colorArray)),
+      gl.STATIC_DRAW
+    );
+    const vColor = gl.getAttribLocation(program, "vColor");
+    gl.enableVertexAttribArray(vColor);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+
     // draw the lines
     gl.drawArrays(gl.LINE_STRIP, 0, vecs.length);
   }
@@ -129,6 +143,17 @@ function main(): void {
   const canvas = createCanvas();
   // create the file upload input
   const fileInput = createFileInput();
+
+  // set up default variables
+  const defaultColors = [
+    { r: 0, g: 0, b: 0 }, // black
+    { r: 1, g: 0, b: 0 }, // red
+    { r: 0, g: 1, b: 0 }, // green
+    { r: 0, g: 0, b: 1 } // blue
+  ];
+  let colorIndex = 0;
+  let extents: [number, number, number, number] = [0, 0.75, 1, 0];
+  let polylines: vec4[][] = [];
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -146,24 +171,58 @@ function main(): void {
   gl.useProgram(program);
 
   // clear the drawing canvas and color it white
-  clearCanvas(canvas, gl, program, { r: 1, g: 1, b: 1 });
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  clearCanvas(canvas, gl, program);
 
   document.addEventListener("keydown", (ev: KeyboardEvent) => {
+    let m: HTMLElement | null;
     switch (ev.key) {
       case "f":
+        polylines = [];
+        extents = [0, 0.75, 1, 0];
+        m = document.getElementById("mode");
+        if (m !== null) m.innerText = "File Mode";
+        clearCanvas(canvas, gl, program);
         // TODO switch to file mode
         break;
       case "d":
+        polylines = [];
+        extents = [0, 0.75, 1, 0];
+        m = document.getElementById("mode");
+        if (m !== null) m.innerText = "Draw Mode";
+        clearCanvas(canvas, gl, program);
         // TODO switch to draw mode
+        break;
+      case "c":
+        colorIndex = (colorIndex + 1) % defaultColors.length;
+        drawPolylines(
+          canvas,
+          gl,
+          program,
+          polylines,
+          defaultColors[colorIndex],
+          extents
+        );
         break;
     }
   });
 
   fileInput.addEventListener("change", () => {
+    const m = document.getElementById("mode");
+    if (m !== null) m.innerText = "File Mode";
     getInput(fileInput)
       .then(parseFileText)
       .then(args => {
-        drawPolylines(canvas, gl, program, args.extents, args.polylines);
+        extents = args.extents;
+        polylines = args.polylines;
+        drawPolylines(
+          canvas,
+          gl,
+          program,
+          polylines,
+          defaultColors[colorIndex],
+          extents
+        );
       })
       .catch(err => {
         console.error(err);

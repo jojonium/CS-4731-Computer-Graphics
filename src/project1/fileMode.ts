@@ -1,7 +1,7 @@
 import vec4 from "./lib/tsm/vec4";
 
 /**
- * create an <input type="file"> element and add it to #container
+ * create an <input type="file"> element and add it to #input-container
  * @return the created input element
  */
 export const createFileInput = (): HTMLInputElement => {
@@ -10,7 +10,7 @@ export const createFileInput = (): HTMLInputElement => {
   const input = document.createElement("input");
   input.type = "file";
   input.id = "file-upload";
-  document.getElementById("container")?.appendChild(input);
+  document.getElementById("input-container")?.appendChild(input);
   return input;
 };
 
