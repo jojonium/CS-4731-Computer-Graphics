@@ -86,6 +86,10 @@ export const parseFileText = (
     }
     let numPoints = 0;
     let p = -1; // polyline index
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     for (let i = start; start < lines.length && p < numPolylines; ++i) {
       if (numPoints === 0) {
         // reading number of points in this polyline
@@ -102,13 +106,17 @@ export const parseFileText = (
           0.0,
           1.0
         ] as [number, number, number, number]);
+        if (v.x < minX) minX = v.x;
+        if (v.y < minY) minY = v.y;
+        if (v.x > maxX) maxX = v.x;
+        if (v.y > maxY) maxY = v.y;
         polylines[p].push(v);
         numPoints--;
       }
     }
     if (extents.length < 4) {
       console.log("default extents");
-      extents = [0, 1, 1, 0];
+      extents = [minX, maxY, maxX, minY];
     }
     resolve({
       extents: extents as [number, number, number, number],

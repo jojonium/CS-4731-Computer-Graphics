@@ -83,26 +83,6 @@ const drawPolylines = (
   }
   gl.viewport(0, 0, canvas.width, canvas.height);
 
-  /*
-  const ratio = (extents[2] - extents[0]) / (extents[1] - extents[3]);
-  const w = canvas.width;
-  const h = canvas.height;
-  let newW = canvas.width;
-  let newH = canvas.height;
-
-  if (ratio > w / h) {
-    gl.viewport(0, 0, w, w / ratio);
-    newH = w / ratio;
-    newW = w;
-  } else if (ratio < w / h) {
-    gl.viewport(0, 0, h * ratio, h);
-    newH = h;
-    newW = h * ratio;
-  }
-  canvas.height = newH;
-  canvas.width = newW;
-  */
-
   // set clear color as white and clear the canvas
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
