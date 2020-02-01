@@ -2,6 +2,7 @@ import { setupWebGL } from "./lib/webgl-utils";
 import { initShaders } from "./lib/initShaders";
 import { createFileInput, getInput, parseFileText } from "./fileMode";
 import vec4 from "./lib/tsm/vec4";
+import mat4 from "./lib/tsm/mat4";
 
 /**
  * flattens a 2D array into a 1D array
@@ -15,16 +16,16 @@ function flatten<T>(arr: T[][]): T[] {
  * create a <canvas> element and add it to the #container
  * @return the created canvas
  */
-function createCanvas(): HTMLCanvasElement {
+const createCanvas = (): HTMLCanvasElement => {
   // remove any existing canvas
   document.getElementById("webgl")?.remove();
   const canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 400;
+  canvas.width = 640;
+  canvas.height = 480;
   canvas.id = "webgl";
   document.getElementById("container")?.appendChild(canvas);
   return canvas;
-}
+};
 
 /**
  * sets canvas size and draws polylines
@@ -41,9 +42,21 @@ const drawPolylines = (
   polylines: vec4[][]
 ): void => {
   // set the view port
-  // TODO use viewport() and ortho() to correctly scale the canvas to the size
-  // of the figure
-  gl.viewport(0, 0, 640, 480);
+  const projMatrix = mat4.orthographic(
+    extents[0],
+    extents[1],
+    extents[2],
+    extents[3],
+    -1.0,
+    1.0
+  );
+  console.log(extents);
+  const projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
+  gl.uniformMatrix4fv(
+    projMatrixLoc,
+    false,
+    Float32Array.from(projMatrix.all())
+  );
 
   // set clear color as white and clear the canvas
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -69,6 +82,30 @@ const drawPolylines = (
   }
 };
 
+/**
+ * scales canvas to fit the extents given, and sets the WebGL viewport
+ * @param canvas the canvas to scale
+ * @param gl the WebGL rendering context
+ * @param extents the left, top, right, and bottom extents
+ */
+const scaleCanvas = (
+  canvas: HTMLCanvasElement,
+  gl: WebGLRenderingContext,
+  extents: [number, number, number, number]
+): void => {
+  const w = extents[2] - extents[0];
+  const h = extents[1] - extents[3];
+  canvas.width = 800;
+  canvas.height = 800;
+  if (w > h) {
+    // height is the limiting factor
+    gl.viewport(0, 0, canvas.width, (h / w) * canvas.height);
+  } else {
+    // width is the limiting factor
+    gl.viewport(0, 0, (w / h) * canvas.width, canvas.height);
+  }
+};
+
 function main(): void {
   // create the <canvas> element
   const canvas = createCanvas();
@@ -82,6 +119,9 @@ function main(): void {
     return;
   }
 
+  // initialize viewport
+  gl.viewport(0, 0, canvas.width, canvas.height);
+
   // initialize shaders
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
@@ -90,6 +130,7 @@ function main(): void {
     getInput(input)
       .then(parseFileText)
       .then(args => {
+        scaleCanvas(canvas, gl, args.extents);
         drawPolylines(gl, program, args.extents, args.polylines);
       })
       .catch(err => {

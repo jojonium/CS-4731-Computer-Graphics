@@ -62,7 +62,7 @@ export const parseFileText = (
         break;
       }
     }
-    let extents = [0, 640, 0, 480]; // default extents
+    let extents = new Array<number>();
 
     // first line after the asterisks contains the extents of the figure
     if (start !== 0) {
@@ -86,6 +86,10 @@ export const parseFileText = (
     }
     let numPoints = 0;
     let p = -1; // polyline index
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     for (let i = start; start < lines.length && p < numPolylines; ++i) {
       if (numPoints === 0) {
         // reading number of points in this polyline
@@ -93,19 +97,27 @@ export const parseFileText = (
         p++;
       } else {
         // reading a point
-        polylines[p].push(
-          new vec4([
-            ...lines[i]
-              .split(/\s+/)
-              .map(parseFloat)
-              .filter(n => !isNaN(n))
-              .slice(0, 2),
-            0.0,
-            1.0
-          ] as [number, number, number, number])
-        );
+        const v = new vec4([
+          ...lines[i]
+            .split(/\s+/)
+            .map(parseFloat)
+            .filter(n => !isNaN(n))
+            .slice(0, 2),
+          0.0,
+          1.0
+        ] as [number, number, number, number]);
+        if (v.x < minX) minX = v.x;
+        if (v.y < minY) minY = v.y;
+        if (v.x > maxX) maxX = v.x;
+        if (v.y > maxY) maxY = v.y;
+        polylines[p].push(v);
         numPoints--;
       }
+    }
+    // if there was no extents line, take the min/max point values
+    if (extents.length < 4) {
+      console.log("default extents");
+      extents = [minX, minY, maxX, maxY];
     }
     resolve({
       extents: extents as [number, number, number, number],
