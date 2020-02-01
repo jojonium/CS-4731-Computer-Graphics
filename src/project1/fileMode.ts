@@ -115,7 +115,6 @@ export const parseFileText = (
       }
     }
     if (extents.length < 4) {
-      console.log("default extents");
       extents = [minX, maxY, maxX, minY];
     }
     resolve({

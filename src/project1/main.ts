@@ -28,13 +28,45 @@ const createCanvas = (): HTMLCanvasElement => {
 };
 
 /**
+ * resets the canvas size and WebGL viewport to default values, then clears the
+ * screen
+ * @param canvas the canvas to clear
+ * @param gl the WebGL rendering context of the canvas
+ * @param program the WebGL program we're using
+ * @param color the red, green, and blue components of the background color,
+ * each from 0-1
+ */
+const clearCanvas = (
+  canvas: HTMLCanvasElement,
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  color: { r: number; g: number; b: number }
+): void => {
+  // set default view port and canvas size
+  canvas.width = 640;
+  canvas.height = 480;
+  const projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
+  const projMatrix = mat4.orthographic(0, 640, 0, 480, -1.0, 1.0);
+  gl.uniformMatrix4fv(
+    projMatrixLoc,
+    false,
+    Float32Array.from(projMatrix.all())
+  );
+  gl.viewport(0, 0, 640, 480);
+
+  // set clear color and clear the canvas
+  gl.clearColor(color.r, color.g, color.b, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+};
+
+/**
  * sets canvas size and draws polylines
  * @param canvas the canvas element to draw on
  * @param gl the WebGL rendering context to draw on
  * @param program the WebGL program to use
  * @param the extents of the world as [left, top, right bottom]
  * @param polylines each element of this array is a polyline, made up of many
- * points expressed as vec2s
+ * points expressed as vec4s
  */
 const drawPolylines = (
   canvas: HTMLCanvasElement,
@@ -43,21 +75,9 @@ const drawPolylines = (
   extents: [number, number, number, number],
   polylines: vec4[][]
 ): void => {
-  // set default view port and canvas size
-  canvas.width = 640;
-  canvas.height = 480;
-  const projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
-  let projMatrix = mat4.orthographic(0, 640, 0, 480, -1.0, 1.0);
-  gl.uniformMatrix4fv(
-    projMatrixLoc,
-    false,
-    Float32Array.from(projMatrix.all())
-  );
-  gl.viewport(0, 0, 640, 480);
-
-  // set the view port based on extents
-  console.log(extents);
-  projMatrix = mat4.orthographic(
+  // clear the drawing canvas and color it white
+  clearCanvas(canvas, gl, program, { r: 1, g: 1, b: 1 });
+  const projMatrix = mat4.orthographic(
     extents[0],
     extents[2],
     extents[3],
@@ -65,6 +85,7 @@ const drawPolylines = (
     -1.0,
     1.0
   );
+  const projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
   gl.uniformMatrix4fv(
     projMatrixLoc,
     false,
@@ -82,10 +103,6 @@ const drawPolylines = (
     canvas.height = (640 * h) / w;
   }
   gl.viewport(0, 0, canvas.width, canvas.height);
-
-  // set clear color as white and clear the canvas
-  gl.clearColor(1.0, 1.0, 1.0, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
 
   // create new vertex buffer
   const vBuffer = gl.createBuffer();
@@ -111,7 +128,7 @@ function main(): void {
   // create the <canvas> element
   const canvas = createCanvas();
   // create the file upload input
-  const input = createFileInput();
+  const fileInput = createFileInput();
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -120,15 +137,30 @@ function main(): void {
     return;
   }
 
-  // initialize viewport
+  // initialize viewport and line width
   gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.lineWidth(2);
 
   // initialize shaders
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
-  input.addEventListener("change", () => {
-    getInput(input)
+  // clear the drawing canvas and color it white
+  clearCanvas(canvas, gl, program, { r: 1, g: 1, b: 1 });
+
+  document.addEventListener("keydown", (ev: KeyboardEvent) => {
+    switch (ev.key) {
+      case "f":
+        // TODO switch to file mode
+        break;
+      case "d":
+        // TODO switch to draw mode
+        break;
+    }
+  });
+
+  fileInput.addEventListener("change", () => {
+    getInput(fileInput)
       .then(parseFileText)
       .then(args => {
         drawPolylines(canvas, gl, program, args.extents, args.polylines);
