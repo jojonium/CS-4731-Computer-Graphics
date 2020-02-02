@@ -1,8 +1,13 @@
+/**
+ * Joseph Petitti - CS 4731 Computer Graphics Project 1
+ */
+
 import { setupWebGL } from "./lib/webgl-utils";
 import { initShaders } from "./lib/initShaders";
 import { createFileInput, getInput, parseFileText } from "./fileMode";
 import vec4 from "./lib/tsm/vec4";
 import mat4 from "./lib/tsm/mat4";
+import { handleClick } from "./drawMode";
 
 /**
  * flattens a 2D array into a 1D array
@@ -154,6 +159,8 @@ function main(): void {
   let colorIndex = 0;
   let extents: [number, number, number, number] = [0, 0.75, 1, 0];
   let polylines: vec4[][] = [];
+  let bDown = false;
+  let justDrewFile = false;
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -174,26 +181,25 @@ function main(): void {
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
   clearCanvas(canvas, gl, program);
 
+  // listen for various key presses that we care about
   document.addEventListener("keydown", (ev: KeyboardEvent) => {
     let m: HTMLElement | null;
     switch (ev.key) {
-      case "f":
+      case "f": // enter file mode
         polylines = [];
         extents = [0, 0.75, 1, 0];
         m = document.getElementById("mode");
         if (m !== null) m.innerText = "File Mode";
         clearCanvas(canvas, gl, program);
-        // TODO switch to file mode
         break;
-      case "d":
+      case "d": // enter draw mode
         polylines = [];
         extents = [0, 0.75, 1, 0];
         m = document.getElementById("mode");
         if (m !== null) m.innerText = "Draw Mode";
         clearCanvas(canvas, gl, program);
-        // TODO switch to draw mode
         break;
-      case "c":
+      case "c": // toggle colors
         colorIndex = (colorIndex + 1) % defaultColors.length;
         drawPolylines(
           canvas,
@@ -204,9 +210,18 @@ function main(): void {
           extents
         );
         break;
+      case "b": // track when B is held/released
+        bDown = true;
+        break;
     }
   });
 
+  // listen for the B key being released
+  document.addEventListener("keyup", (ev: KeyboardEvent) => {
+    if (ev.key === "b") bDown = false;
+  });
+
+  // handle a file being uploaded
   fileInput.addEventListener("change", () => {
     const m = document.getElementById("mode");
     if (m !== null) m.innerText = "File Mode";
@@ -227,6 +242,29 @@ function main(): void {
       .catch(err => {
         console.error(err);
       });
+    justDrewFile = true; // start a new line the next time the user clicks
+  });
+
+  // handle mouse clicks on the canvas
+  canvas.addEventListener("mousedown", (ev: MouseEvent) => {
+    const m = document.getElementById("mode");
+    if (m !== null) m.innerText = "Draw Mode";
+    // translate the click location to its relative position on the canvas
+    const rect = canvas.getBoundingClientRect();
+    let mx = (ev.clientX - rect.left) / canvas.width;
+    let my = (canvas.height - (ev.clientY - rect.top)) / canvas.height;
+    mx = mx * (extents[2] - extents[0]) + extents[0];
+    my = my * (extents[1] - extents[3]) + extents[3];
+    polylines = handleClick(mx, my, polylines, bDown || justDrewFile);
+    drawPolylines(
+      canvas,
+      gl,
+      program,
+      polylines,
+      defaultColors[colorIndex],
+      extents
+    );
+    justDrewFile = false;
   });
 }
 
