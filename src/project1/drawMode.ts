@@ -1,6 +1,23 @@
 import vec4 from "./lib/tsm/vec4";
 
 /**
+ * create an <input type="color" element and add it to #input-container
+ * @return teh created input element
+ */
+export const createColorInput = (): HTMLInputElement => {
+  // remove any existing input
+  document.getElementById("color-picker-container")?.remove();
+  const input = document.createElement("input");
+  input.type = "color";
+  input.id = "color-picker";
+  const span = document.createElement("span");
+  span.id = "color-picker-container";
+  span.innerText = "Line color: ";
+  span.appendChild(input);
+  document.getElementById("input-container")?.appendChild(span);
+  return input;
+};
+/**
  * Handles a mouse click on the canvas in draw mode.
  * @param x the x-coordinate of the click relative to the canvas
  * @param y the y-coordinate of the click relative to the canvas

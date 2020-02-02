@@ -7,7 +7,7 @@ import { initShaders } from "./lib/initShaders";
 import { createFileInput, getInput, parseFileText } from "./fileMode";
 import vec4 from "./lib/tsm/vec4";
 import mat4 from "./lib/tsm/mat4";
-import { handleClick } from "./drawMode";
+import { handleClick, createColorInput } from "./drawMode";
 
 /**
  * flattens a 2D array into a 1D array
@@ -16,6 +16,18 @@ import { handleClick } from "./drawMode";
 function flatten<T>(arr: T[][]): T[] {
   return new Array<T>().concat(...arr);
 }
+
+/**
+ * converts a fractional color value to a 2-digit hex string
+ * @param num a color value from 0 to 1
+ */
+const toHex = (num: number): string => {
+  let out = Math.floor(num * 255)
+    .toString(16)
+    .slice(0, 2);
+  if (out.length < 2) out = "0" + out;
+  return out;
+};
 
 /**
  * create a <canvas> element and add it to the #canvas-container
@@ -148,6 +160,8 @@ function main(): void {
   const canvas = createCanvas();
   // create the file upload input
   const fileInput = createFileInput();
+  // create the color picker input
+  const colorInput = createColorInput();
 
   // set up default variables
   const defaultColors = [
@@ -157,6 +171,7 @@ function main(): void {
     { r: 0, g: 0, b: 1 } // blue
   ];
   let colorIndex = 0;
+  let currentColor = defaultColors[colorIndex];
   let extents: [number, number, number, number] = [0, 0.75, 1, 0];
   let polylines: vec4[][] = [];
   let bDown = false;
@@ -201,14 +216,14 @@ function main(): void {
         break;
       case "c": // toggle colors
         colorIndex = (colorIndex + 1) % defaultColors.length;
-        drawPolylines(
-          canvas,
-          gl,
-          program,
-          polylines,
-          defaultColors[colorIndex],
-          extents
-        );
+        currentColor = defaultColors[colorIndex];
+        // update color picker
+        colorInput.value =
+          "#" +
+          toHex(currentColor.r) +
+          toHex(currentColor.g) +
+          toHex(currentColor.b);
+        drawPolylines(canvas, gl, program, polylines, currentColor, extents);
         break;
       case "b": // track when B is held/released
         bDown = true;
@@ -230,14 +245,7 @@ function main(): void {
       .then(args => {
         extents = args.extents;
         polylines = args.polylines;
-        drawPolylines(
-          canvas,
-          gl,
-          program,
-          polylines,
-          defaultColors[colorIndex],
-          extents
-        );
+        drawPolylines(canvas, gl, program, polylines, currentColor, extents);
       })
       .catch(err => {
         console.error(err);
@@ -256,15 +264,19 @@ function main(): void {
     mx = mx * (extents[2] - extents[0]) + extents[0];
     my = my * (extents[1] - extents[3]) + extents[3];
     polylines = handleClick(mx, my, polylines, bDown || justDrewFile);
-    drawPolylines(
-      canvas,
-      gl,
-      program,
-      polylines,
-      defaultColors[colorIndex],
-      extents
-    );
+    drawPolylines(canvas, gl, program, polylines, currentColor, extents);
     justDrewFile = false;
+  });
+
+  // change the draw color when the color picker changes
+  colorInput.addEventListener("change", () => {
+    console.log(colorInput.value);
+    currentColor = {
+      r: parseInt(colorInput.value.slice(1, 3), 16) / 255,
+      g: parseInt(colorInput.value.slice(3, 5), 16) / 255,
+      b: parseInt(colorInput.value.slice(5, 7), 16) / 255
+    };
+    drawPolylines(canvas, gl, program, polylines, currentColor, extents);
   });
 }
 
