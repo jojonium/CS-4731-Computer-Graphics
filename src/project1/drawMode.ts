@@ -1,7 +1,7 @@
 import vec4 from "./lib/tsm/vec4";
 
 /**
- * create an <input type="color" element and add it to #input-container
+ * create an <input type="color"> element and add it to #input-container
  * @return teh created input element
  */
 export const createColorInput = (): HTMLInputElement => {
