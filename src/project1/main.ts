@@ -1,5 +1,15 @@
 /**
  * Joseph Petitti - CS 4731 Computer Graphics Project 1
+ *
+ * Extra credit features:
+ *
+ *   - Users are not only limited to red, green, blue, and black line colors.
+ *     By using the color picker input to the bottom-right of the canvas, users
+ *     can choose any valid HTML color and the drawing will be updated.
+ *
+ *   - Users can draw on existing .dat file images. By uploading a file and then
+ *     clicking on the canvas the program will enter draw mode with the image on
+ *     the canvas
  */
 
 import { setupWebGL } from "./lib/webgl-utils";
