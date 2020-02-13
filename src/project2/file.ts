@@ -1,4 +1,4 @@
-import vec4 from "./lib/tsm/vec4";
+import vec3 from "./lib/tsm/vec3";
 
 /**
  * create an <input type="file"> element and add it to #input-container
@@ -46,8 +46,56 @@ export const getInput = (elt: HTMLInputElement): Promise<string> => {
  * in a promise
  * @param str the input file's text as a string
  */
-export const parseFileText = (str: string): void => {
-  // TODO implement
-  str;
-  return;
+export const parseFileText = (
+  str: string
+): { vertices: vec3[]; polygons: vec3[][] } => {
+  let numVertices = 0;
+  let numPolygons = 0;
+  let headerDone = false;
+  let vertexCounter = 0;
+  let polygonCounter = 0;
+  // x y z coordinates of each vertex
+  let vertices: vec3[] = new Array<vec3>(numVertices);
+  // each polygon is an array of vertices
+  let polygons: vec3[][] = new Array<vec3[]>(numPolygons);
+
+  const lines = str.split("\n").map(w => w.toLowerCase().trim());
+  if (lines[0] !== "ply") {
+    throw new Error("First line of input file must by 'ply'");
+  }
+  for (let lineNum = 1; lineNum < lines.length; ++lineNum) {
+    const words = lines[lineNum]
+      .trim()
+      .replace(/\s+/g, " ")
+      .split(" ");
+    if (words.length === 0 || words[0] === "") continue;
+    if (!headerDone) {
+      // parsing header
+      if (words[0] === "end_header") {
+        headerDone = true;
+        vertices = new Array<vec3>(numVertices);
+        polygons = new Array<vec3[]>(numPolygons);
+        continue;
+      }
+      if (words[0] === "format") continue;
+      if (words[0] === "element") {
+        if (words[1] === "vertex") numVertices = parseInt(words[2]);
+        if (words[1] === "face") numPolygons = parseInt(words[2]);
+      }
+      if (words[0] === "property") {
+        if (words[1] === "float32" || words[1] === "list") continue;
+      }
+    } else if (vertexCounter < numVertices) {
+      // parsing vertices
+      vertices[vertexCounter] = new vec3(
+        words.slice(0, 3).map(parseFloat) as [number, number, number]
+      );
+      vertexCounter++;
+    } else {
+      // parsing polygons
+      polygons[polygonCounter] = words.slice(1).map(w => vertices[parseInt(w)]);
+      polygonCounter++;
+    }
+  }
+  return { vertices: vertices, polygons: polygons };
 };

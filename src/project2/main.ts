@@ -184,8 +184,10 @@ function main(): void {
   fileInput.addEventListener("change", () => {
     getInput(fileInput)
       .then(parseFileText)
+      .then(console.log)
       // TODO implement
       .catch((err: Error) => {
+        console.error("Invalid file format:");
         console.error(err);
       });
   });
