@@ -23,14 +23,14 @@
   },
   "homepage": "https://github.com/jojonium/CS-4731-Computer-Graphics#readme",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^2.16.0",
-    "@typescript-eslint/parser": "^2.16.0",
+    "@typescript-eslint/eslint-plugin": "^2.19.2",
+    "@typescript-eslint/parser": "^2.19.2",
     "browserify": "^16.5.0",
     "eslint": "^6.8.0",
-    "eslint-config-prettier": "^6.9.0",
+    "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
     "prettier": "^1.19.1",
-    "typescript": "^3.7.4",
+    "typescript": "^3.7.5",
     "watchify": "^3.11.1"
   }
 }
