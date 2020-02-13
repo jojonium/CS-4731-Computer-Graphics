@@ -2,10 +2,11 @@
  * Joseph Petitti - CS 4731 Computer Graphics Project 2
  */
 
-import { setupWebGL } from "./lib/webgl-utils";
+import { createFileInput, getInput, parseFileText } from "./file";
 import { initShaders } from "./lib/initShaders";
-import vec4 from "./lib/tsm/vec4";
 import mat4 from "./lib/tsm/mat4";
+import vec4 from "./lib/tsm/vec4";
+import { setupWebGL } from "./lib/webgl-utils";
 
 /**
  * flattens a 2D array into a 1D array
@@ -71,6 +72,7 @@ const clearCanvas = (
 };
 
 /**
+ * TODO remove
  * sets canvas size and draws polylines
  * @param canvas the canvas element to draw on
  * @param gl the WebGL rendering context to draw on
@@ -156,20 +158,8 @@ const drawPolylines = (
 function main(): void {
   // create the <canvas> element
   const canvas = createCanvas();
-
-  // set up default variables
-  const defaultColors = [
-    { r: 0, g: 0, b: 0 }, // black
-    { r: 1, g: 0, b: 0 }, // red
-    { r: 0, g: 1, b: 0 }, // green
-    { r: 0, g: 0, b: 1 } // blue
-  ];
-  const colorIndex = 0;
-  const currentColor = defaultColors[colorIndex];
-  let extents: [number, number, number, number] = [0, 0.75, 1, 0];
-  let polylines: vec4[][] = [];
-  let bDown = false;
-  const justDrewFile = false;
+  // create the file upload input
+  const fileInput = createFileInput();
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -190,28 +180,14 @@ function main(): void {
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
   clearCanvas(canvas, gl, program);
 
-  // listen for various key presses that we care about
-  document.addEventListener("keydown", (ev: KeyboardEvent) => {
-    let m: HTMLElement | null;
-    switch (ev.key) {
-      case "f": // enter file mode
-        polylines = [];
-        extents = [0, 0.75, 1, 0];
-        m = document.getElementById("mode");
-        if (m !== null) m.innerText = "File Mode";
-        clearCanvas(canvas, gl, program);
-        break;
-      case "d": // enter draw mode
-        polylines = [];
-        extents = [0, 0.75, 1, 0];
-        m = document.getElementById("mode");
-        if (m !== null) m.innerText = "Draw Mode";
-        clearCanvas(canvas, gl, program);
-        break;
-      case "b": // track when B is held/released
-        bDown = true;
-        break;
-    }
+  // handle a file being uploaded
+  fileInput.addEventListener("change", () => {
+    getInput(fileInput)
+      .then(parseFileText)
+      // TODO implement
+      .catch((err: Error) => {
+        console.error(err);
+      });
   });
 }
 
