@@ -46,9 +46,7 @@ export const getInput = (elt: HTMLInputElement): Promise<string> => {
  * in a promise
  * @param str the input file's text as a string
  */
-export const parseFileText = (
-  str: string
-): { vertices: vec3[]; polygons: vec3[][] } => {
+export const parseFileText = (str: string): vec3[][] => {
   let numVertices = 0;
   let numPolygons = 0;
   let headerDone = false;
@@ -97,5 +95,5 @@ export const parseFileText = (
       polygonCounter++;
     }
   }
-  return { vertices: vertices, polygons: polygons };
+  return polygons;
 };
