@@ -1,5 +1,14 @@
 import vec3 from "./lib/tsm/vec3";
 
+export type Extents = {
+  minX: number;
+  minY: number;
+  minZ: number;
+  maxX: number;
+  maxY: number;
+  maxZ: number;
+};
+
 /**
  * create an <input type="file"> element and add it to #input-container
  * @return the created input element
@@ -45,13 +54,26 @@ export const getInput = (elt: HTMLInputElement): Promise<string> => {
  * parses the text of an input file and returns the object's vertices and faces
  * in a promise
  * @param str the input file's text as a string
+ * @returns polygons the list of polygons as vec3 arrays
+ * @returns extents the X, Y, and Z bounds of the figure
  */
-export const parseFileText = (str: string): vec3[][] => {
+export const parseFileText = (
+  str: string
+): {
+  polygons: vec3[][];
+  extents: Extents;
+} => {
   let numVertices = 0;
   let numPolygons = 0;
   let headerDone = false;
   let vertexCounter = 0;
   let polygonCounter = 0;
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
   // x y z coordinates of each vertex
   let vertices: vec3[] = new Array<vec3>(numVertices);
   // each polygon is an array of vertices
@@ -85,9 +107,18 @@ export const parseFileText = (str: string): vec3[][] => {
       }
     } else if (vertexCounter < numVertices) {
       // parsing vertices
-      vertices[vertexCounter] = new vec3(
+      const v = new vec3(
         words.slice(0, 3).map(parseFloat) as [number, number, number]
       );
+      vertices[vertexCounter] = v;
+      // check to see if this goes beyond our existing extents
+      if (v.x < minX) minX = v.x;
+      if (v.y < minY) minY = v.y;
+      if (v.z < minZ) minZ = v.z;
+      if (v.x > maxX) maxX = v.x;
+      if (v.y > maxY) maxY = v.y;
+      if (v.z > maxZ) maxZ = v.z;
+
       vertexCounter++;
     } else {
       // parsing polygons
@@ -95,5 +126,15 @@ export const parseFileText = (str: string): vec3[][] => {
       polygonCounter++;
     }
   }
-  return polygons;
+  return {
+    polygons: polygons,
+    extents: {
+      minX: minX,
+      minY: minY,
+      minZ: minZ,
+      maxX: maxX,
+      maxY: maxY,
+      maxZ: maxZ
+    }
+  };
 };

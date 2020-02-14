@@ -2,7 +2,7 @@
  * Joseph Petitti - CS 4731 Computer Graphics Project 2
  */
 
-import { createFileInput, getInput, parseFileText } from "./file";
+import { createFileInput, Extents, getInput, parseFileText } from "./file";
 import { initShaders } from "./lib/initShaders";
 import mat4 from "./lib/tsm/mat4";
 import vec3 from "./lib/tsm/vec3";
@@ -20,6 +20,7 @@ function flatten<T>(arr: T[][]): T[] {
  * converts a fractional color value to a 2-digit hex string
  * @param num a color value from 0 to 1
  */
+/*
 const toHex = (num: number): string => {
   let out = Math.floor(num * 255)
     .toString(16)
@@ -27,6 +28,7 @@ const toHex = (num: number): string => {
   if (out.length < 2) out = "0" + out;
   return out;
 };
+*/
 
 /**
  * create a <canvas> element and add it to the #canvas-container
@@ -37,7 +39,7 @@ const createCanvas = (): HTMLCanvasElement => {
   document.getElementById("webgl")?.remove();
   const canvas = document.createElement("canvas");
   canvas.width = 640;
-  canvas.height = 480;
+  canvas.height = 640;
   canvas.id = "webgl";
   document.getElementById("canvas-container")?.appendChild(canvas);
   return canvas;
@@ -53,14 +55,11 @@ const render = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
-  polygons: vec3[][]
+  polygons: vec3[][],
+  extents: Extents
 ): void => {
-  // set view port and canvas size
-  canvas.width = 640;
-  canvas.height = 480;
-  gl.viewport(0, 0, 640, 480);
-
-  // clear canvas
+  // set view port and clear canvas
+  gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -78,8 +77,26 @@ const render = (
   const eyeVec = new vec3([0, 0, 2]);
   const lookVec = new vec3([0, 0, 0]);
   const upVec = new vec3([0, 1, 0]);
-  const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
-  // TODO apply transforms to the model
+  let modelView = mat4.lookAt(eyeVec, lookVec, upVec);
+
+  // transform the modelView matrix
+  const scaleFactor =
+    1 /
+    Math.max(
+      extents.maxX - extents.minX,
+      extents.maxY - extents.minY,
+      extents.maxZ - extents.minZ
+    );
+  modelView = modelView
+    .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]))
+    .translate(
+      new vec3([
+        -0.5 * (extents.minX + extents.maxX),
+        -0.5 * (extents.minY + extents.maxY),
+        -0.5 * (extents.minZ + extents.maxZ)
+      ])
+    );
+
   const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
   gl.uniformMatrix4fv(
     modelMatrixLoc,
@@ -91,7 +108,6 @@ const render = (
   const vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
   const vertices = flatten(polygons);
-  console.log(vertices);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     Float32Array.from(flatten(vertices.map(vec => [vec.x, vec.y, vec.z, 1.0]))),
@@ -106,7 +122,6 @@ const render = (
   const cBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
   const colors = vertices.map(() => [1.0, 1.0, 1.0, 1.0]);
-  console.log(colors);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     Float32Array.from(flatten(colors)),
@@ -116,6 +131,7 @@ const render = (
   gl.enableVertexAttribArray(vColor);
   gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
 
+  // gl.drawArrays(gl.TRIANGLES, 0, polygons.length);
   for (let i = 0; i < vertices.length - 2; i += 3) {
     gl.drawArrays(gl.LINE_LOOP, i, 3);
   }
@@ -134,10 +150,6 @@ function main(): void {
     return;
   }
 
-  // initialize viewport and line width
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.lineWidth(2);
-
   // initialize shaders
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
@@ -146,8 +158,7 @@ function main(): void {
   fileInput.addEventListener("change", () => {
     getInput(fileInput)
       .then(parseFileText)
-      .then(polygons => render(canvas, gl, program, polygons))
-      // TODO implement
+      .then(obj => render(canvas, gl, program, obj.polygons, obj.extents))
       .catch((err: Error) => {
         console.error("Invalid file format:");
         console.error(err);
