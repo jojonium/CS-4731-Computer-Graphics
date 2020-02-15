@@ -1,9 +1,12 @@
 import { Extents } from "./file";
-import { flatten, pulse } from "./helpers";
+import { flatten, pulse, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec3 from "./lib/tsm/vec3";
 import { GLOBALS } from "./main";
 
+/**
+ * options to pass between steps
+ */
 export type TransformOpts = {
   shouldXTranslate: -1 | 0 | 1;
   xTranslateCount: number;
@@ -19,6 +22,7 @@ export type TransformOpts = {
   zRollCount: number;
   shouldPulse: boolean;
   pulseCount: number;
+  drawNormals: boolean;
 };
 
 /**
@@ -39,7 +43,8 @@ export const initTransformOpts = (): TransformOpts => {
     shouldZRoll: 0,
     zRollCount: 0,
     shouldPulse: false,
-    pulseCount: 0
+    pulseCount: 0,
+    drawNormals: false
   };
 };
 
@@ -124,7 +129,27 @@ export const render = (
   const pulseDistance =
     -((Math.sin(topts.pulseCount / 10 - Math.PI / 2) + 1) * 0.05) / scaleFactor;
   const transformedPolygons = polygons.map(poly => pulse(poly, pulseDistance));
-  const vertices = flatten(transformedPolygons);
+  let vertices = flatten(transformedPolygons);
+
+  // add normals
+  if (topts.drawNormals) {
+    vertices = vertices.concat(
+      flatten(
+        polygons.map(poly => {
+          const center = new vec3([
+            (poly[0].x + poly[1].x + poly[2].x) / 3,
+            (poly[0].y + poly[1].y + poly[2].y) / 3,
+            (poly[0].z + poly[1].z + poly[2].z) / 3
+          ]);
+          return [
+            center,
+            vec3.difference(center, normal(poly[0], poly[1], poly[2])),
+            center
+          ];
+        })
+      )
+    );
+  }
 
   // buffer the vertices
   const vBuffer = gl.createBuffer();

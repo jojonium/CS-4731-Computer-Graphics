@@ -8,6 +8,7 @@
  *   - A color-picker for the color of the mesh's lines. It can be changed at
  *     any time, even while animating, and then canvas will update instantly
  *   - The mesh can translate or rotate in any number of directions at once.
+ *   - Press 'N' to toggle drawing normal vectors for each face.
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
@@ -36,6 +37,7 @@ function main(): void {
   // create input for line color picker
   const lineColorInput = createColorInput();
 
+  // initialize line color as white
   let lineColor = [1.0, 1.0, 1.0, 1.0];
 
   // get the rendering context for WebGL
@@ -121,6 +123,9 @@ function main(): void {
         break;
       case "b":
         transformOpts.shouldPulse = !transformOpts.shouldPulse;
+        break;
+      case "n":
+        transformOpts.drawNormals = !transformOpts.drawNormals;
         break;
     }
   });
