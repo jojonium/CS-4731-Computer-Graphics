@@ -1,5 +1,10 @@
 /**
  * Joseph Petitti - CS 4731 Computer Graphics Project 2
+ *
+ * Extra credit features:
+ *   - You can roll the model in any of the six directional axes, rather than
+ *     just positive x. 'R' and 'T' roll around the X axis, 'F' and 'G' roll
+ *     around the Y axis, and 'H' and 'J' roll around the Z axis.
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
@@ -68,7 +73,22 @@ function main(): void {
           transformOpts.shouldZTranslate === 0 ? -1 : 0;
         break;
       case "r":
-        transformOpts.shouldXRoll = !transformOpts.shouldXRoll;
+        transformOpts.shouldXRoll = transformOpts.shouldXRoll === 0 ? 1 : 0;
+        break;
+      case "t":
+        transformOpts.shouldXRoll = transformOpts.shouldXRoll === 0 ? -1 : 0;
+        break;
+      case "f":
+        transformOpts.shouldYRoll = transformOpts.shouldYRoll === 0 ? 1 : 0;
+        break;
+      case "g":
+        transformOpts.shouldYRoll = transformOpts.shouldYRoll === 0 ? -1 : 0;
+        break;
+      case "h":
+        transformOpts.shouldZRoll = transformOpts.shouldZRoll === 0 ? 1 : 0;
+        break;
+      case "j":
+        transformOpts.shouldZRoll = transformOpts.shouldZRoll === 0 ? -1 : 0;
         break;
       case "b":
         transformOpts.shouldPulse = !transformOpts.shouldPulse;
