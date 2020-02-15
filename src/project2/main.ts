@@ -7,13 +7,14 @@
  *     around the Y axis, and 'H' and 'J' roll around the Z axis.
  *   - A color-picker for the color of the mesh's lines. It can be changed at
  *     any time, even while animating, and then canvas will update instantly
+ *   - The mesh can translate or rotate in any number of directions at once.
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
 import { createCanvas, createColorInput } from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import { setupWebGL } from "./lib/webgl-utils";
-import { render, initTransformOpts } from "./render";
+import { initTransformOpts, render } from "./render";
 
 /**
  * All global variables are stored in this object to make them accessible from
@@ -35,7 +36,7 @@ function main(): void {
   // create input for line color picker
   const lineColorInput = createColorInput();
 
-  let lineColor = [1.0, 1.0, 1.0];
+  let lineColor = [1.0, 1.0, 1.0, 1.0];
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;

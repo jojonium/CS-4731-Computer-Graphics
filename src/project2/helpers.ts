@@ -61,6 +61,7 @@ export const createColorInput = (): HTMLInputElement => {
   // remove any existing input
   document.getElementById("color-picker-container")?.remove();
   const input = document.createElement("input");
+  input.value = "#ffffff";
   input.type = "color";
   input.id = "color-picker";
   const span = document.createElement("span");
@@ -70,4 +71,3 @@ export const createColorInput = (): HTMLInputElement => {
   document.getElementById("input-container")?.appendChild(span);
   return input;
 };
-
