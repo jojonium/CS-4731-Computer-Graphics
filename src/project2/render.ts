@@ -5,10 +5,30 @@ import vec3 from "./lib/tsm/vec3";
 import { GLOBALS } from "./main";
 
 export type TransformOpts = {
-  scale: number;
-  translate: vec3;
+  shouldXTranslate: -1 | 0 | 1;
+  xTranslateCount: number;
+  shouldYTranslate: -1 | 0 | 1;
+  yTranslateCount: number;
+  shouldZTranslate: -1 | 0 | 1;
+  zTranslateCount: number;
   shouldPulse: boolean;
   pulseCount: number;
+};
+
+/**
+ * sets initial transform options to all zero and false
+ */
+export const initTransformOpts = (): TransformOpts => {
+  return {
+    shouldXTranslate: 0,
+    xTranslateCount: 0,
+    shouldYTranslate: 0,
+    yTranslateCount: 0,
+    shouldZTranslate: 0,
+    zTranslateCount: 0,
+    shouldPulse: false,
+    pulseCount: 0
+  };
 };
 
 /**
@@ -56,6 +76,11 @@ export const render = (
       extents.maxY - extents.minY,
       extents.maxZ - extents.minZ
     );
+  const userTranslateVec = new vec3([
+    topts.xTranslateCount,
+    topts.yTranslateCount,
+    topts.zTranslateCount
+  ]);
   modelView = modelView
     .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]))
     .translate(
@@ -64,7 +89,8 @@ export const render = (
         -0.5 * (extents.minY + extents.maxY),
         -0.5 * (extents.minZ + extents.maxZ)
       ])
-    );
+    )
+    .translate(userTranslateVec);
 
   const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
   gl.uniformMatrix4fv(
@@ -113,6 +139,9 @@ export const render = (
   if (topts.shouldPulse) {
     topts.pulseCount++;
   }
+  topts.xTranslateCount += topts.shouldXTranslate;
+  topts.yTranslateCount += topts.shouldYTranslate;
+  topts.zTranslateCount += topts.shouldZTranslate;
 
   GLOBALS.callbackID = requestAnimationFrame(
     (timeStamp: DOMHighResTimeStamp) => {

@@ -5,9 +5,8 @@
 import { createFileInput, getInput, parseFileText } from "./file";
 import { createCanvas } from "./helpers";
 import { initShaders } from "./lib/initShaders";
-import vec3 from "./lib/tsm/vec3";
 import { setupWebGL } from "./lib/webgl-utils";
-import { render, TransformOpts } from "./render";
+import { render, initTransformOpts } from "./render";
 
 /**
  * All global variables are stored in this object to make them accessible from
@@ -38,18 +37,39 @@ function main(): void {
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
-  // set initial transformation options
-  const transformOpts: TransformOpts = {
-    scale: 1,
-    translate: new vec3([0, 0, 0]),
-    shouldPulse: false,
-    pulseCount: 0
-  };
+  let transformOpts = initTransformOpts();
 
+  // deal with key presses
   document.addEventListener("keypress", (ev: KeyboardEvent) => {
     const key = ev.key.toLowerCase();
-    if (key === "b") {
-      transformOpts.shouldPulse = !transformOpts.shouldPulse;
+    switch (key) {
+      case "b":
+        transformOpts.shouldPulse = !transformOpts.shouldPulse;
+        break;
+      case "x":
+        transformOpts.shouldXTranslate =
+          transformOpts.shouldXTranslate === 0 ? 1 : 0;
+        break;
+      case "c":
+        transformOpts.shouldXTranslate =
+          transformOpts.shouldXTranslate === 0 ? -1 : 0;
+        break;
+      case "y":
+        transformOpts.shouldYTranslate =
+          transformOpts.shouldYTranslate === 0 ? 1 : 0;
+        break;
+      case "u":
+        transformOpts.shouldYTranslate =
+          transformOpts.shouldYTranslate === 0 ? -1 : 0;
+        break;
+      case "z":
+        transformOpts.shouldZTranslate =
+          transformOpts.shouldZTranslate === 0 ? 1 : 0;
+        break;
+      case "a":
+        transformOpts.shouldZTranslate =
+          transformOpts.shouldZTranslate === 0 ? -1 : 0;
+        break;
     }
   });
 
@@ -58,6 +78,7 @@ function main(): void {
     // cancel any existing animation
     if (GLOBALS.callbackID !== undefined)
       cancelAnimationFrame(GLOBALS.callbackID);
+    transformOpts = initTransformOpts();
     getInput(fileInput)
       .then(parseFileText)
       .then(obj =>
