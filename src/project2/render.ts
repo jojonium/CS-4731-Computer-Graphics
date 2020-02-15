@@ -50,6 +50,7 @@ export const initTransformOpts = (): TransformOpts => {
  * @param polygons the list of polygons, represented as arrays of vec3s
  * @param extents the max and min dimensions of the model
  * @param topts transform options
+ * @param lineColor color used for drawing lines as [r, g, b, a], each 0-1
  */
 export const render = (
   canvas: HTMLCanvasElement,
@@ -57,7 +58,8 @@ export const render = (
   program: WebGLProgram,
   polygons: vec3[][],
   extents: Extents,
-  topts: TransformOpts
+  topts: TransformOpts,
+  lineColor: number[]
 ): void => {
   // set view port and clear canvas
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -140,7 +142,7 @@ export const render = (
   // buffer colors
   const cBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  const colors = vertices.map(() => [1.0, 1.0, 1.0, 1.0]);
+  const colors = vertices.map(() => lineColor);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     Float32Array.from(flatten(colors)),
@@ -165,7 +167,7 @@ export const render = (
 
   GLOBALS.callbackID = requestAnimationFrame(
     (timeStamp: DOMHighResTimeStamp) => {
-      render(canvas, gl, program, polygons, extents, topts);
+      render(canvas, gl, program, polygons, extents, topts, lineColor);
     }
   );
 };

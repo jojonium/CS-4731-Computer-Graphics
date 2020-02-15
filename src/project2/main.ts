@@ -5,10 +5,12 @@
  *   - You can roll the model in any of the six directional axes, rather than
  *     just positive x. 'R' and 'T' roll around the X axis, 'F' and 'G' roll
  *     around the Y axis, and 'H' and 'J' roll around the Z axis.
+ *   - A color-picker for the color of the mesh's lines. It can be changed at
+ *     any time, even while animating, and then canvas will update instantly
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
-import { createCanvas } from "./helpers";
+import { createCanvas, createColorInput } from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import { setupWebGL } from "./lib/webgl-utils";
 import { render, initTransformOpts } from "./render";
@@ -30,6 +32,10 @@ function main(): void {
   const canvas = createCanvas();
   // create the file upload input
   const fileInput = createFileInput();
+  // create input for line color picker
+  const lineColorInput = createColorInput();
+
+  let lineColor = [1.0, 1.0, 1.0];
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -43,6 +49,28 @@ function main(): void {
   gl.useProgram(program);
 
   let transformOpts = initTransformOpts();
+
+  const startDrawing = (): void => {
+    // cancel any existing animation
+    if (GLOBALS.callbackID !== undefined)
+      cancelAnimationFrame(GLOBALS.callbackID);
+    getInput(fileInput)
+      .then(parseFileText)
+      .then(obj =>
+        render(
+          canvas,
+          gl,
+          program,
+          obj.polygons,
+          obj.extents,
+          transformOpts,
+          lineColor
+        )
+      )
+      .catch((err: Error) => {
+        console.error(err);
+      });
+  };
 
   // deal with key presses
   document.addEventListener("keypress", (ev: KeyboardEvent) => {
@@ -96,20 +124,20 @@ function main(): void {
     }
   });
 
+  lineColorInput.addEventListener("change", () => {
+    lineColor = [
+      parseInt(lineColorInput.value.slice(1, 3), 16) / 255,
+      parseInt(lineColorInput.value.slice(3, 5), 16) / 255,
+      parseInt(lineColorInput.value.slice(5, 7), 16) / 255,
+      1.0
+    ];
+    startDrawing();
+  });
+
   // handle a file being uploaded
   fileInput.addEventListener("change", () => {
-    // cancel any existing animation
-    if (GLOBALS.callbackID !== undefined)
-      cancelAnimationFrame(GLOBALS.callbackID);
     transformOpts = initTransformOpts();
-    getInput(fileInput)
-      .then(parseFileText)
-      .then(obj =>
-        render(canvas, gl, program, obj.polygons, obj.extents, transformOpts)
-      )
-      .catch((err: Error) => {
-        console.error(err);
-      });
+    startDrawing();
   });
 }
 
