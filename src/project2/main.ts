@@ -7,6 +7,19 @@ import { initShaders } from "./lib/initShaders";
 import mat4 from "./lib/tsm/mat4";
 import vec3 from "./lib/tsm/vec3";
 import { setupWebGL } from "./lib/webgl-utils";
+import { pulse } from "./helpers";
+
+type TransformOpts = {
+  scale: number;
+  translate: vec3;
+  pulseDistance: number;
+};
+
+/**
+ * global variable used to store the ID of the animation callback so it can be
+ * cancelled later
+ */
+let CALLBACK_ID: number | undefined = undefined;
 
 /**
  * flattens a 2D array into a 1D array
@@ -50,13 +63,18 @@ const createCanvas = (): HTMLCanvasElement => {
  * @param gl the WebGL rendering context of the canvas
  * @param program the WebGL program we're using
  * @param polygons the list of polygons, represented as arrays of vec3s
+ * @param extents the max and min dimensions of the model
+ * @param frameNum the number of this frame
+ * @param topts transform options
  */
 const render = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
   polygons: vec3[][],
-  extents: Extents
+  extents: Extents,
+  frameNum: number,
+  topts: TransformOpts
 ): void => {
   // set view port and clear canvas
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -104,10 +122,15 @@ const render = (
     Float32Array.from(modelView.all())
   );
 
+  // apply transformations to the vertices
+  const transformedPolygons = polygons.map(poly =>
+    pulse(poly, topts.pulseDistance)
+  );
+  const vertices = flatten(transformedPolygons);
+
   // buffer the vertices
   const vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-  const vertices = flatten(polygons);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     Float32Array.from(flatten(vertices.map(vec => [vec.x, vec.y, vec.z, 1.0]))),
@@ -131,10 +154,16 @@ const render = (
   gl.enableVertexAttribArray(vColor);
   gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
 
-  // gl.drawArrays(gl.TRIANGLES, 0, polygons.length);
   for (let i = 0; i < vertices.length - 2; i += 3) {
     gl.drawArrays(gl.LINE_LOOP, i, 3);
   }
+
+  // change transformation values for next frame
+  topts.pulseDistance = -((Math.cos(frameNum / 10) + 1) * 0.05) / scaleFactor;
+
+  CALLBACK_ID = requestAnimationFrame((timeStamp: DOMHighResTimeStamp) => {
+    render(canvas, gl, program, polygons, extents, frameNum + 1, topts);
+  });
 };
 
 function main(): void {
@@ -154,11 +183,22 @@ function main(): void {
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
+  // set initial transformation options
+  const initialOpts: TransformOpts = {
+    scale: 1,
+    translate: new vec3([0, 0, 0]),
+    pulseDistance: 0
+  };
+
   // handle a file being uploaded
   fileInput.addEventListener("change", () => {
+    // cancel any existing animation
+    if (CALLBACK_ID !== undefined) cancelAnimationFrame(CALLBACK_ID);
     getInput(fileInput)
       .then(parseFileText)
-      .then(obj => render(canvas, gl, program, obj.polygons, obj.extents))
+      .then(obj =>
+        render(canvas, gl, program, obj.polygons, obj.extents, 0, initialOpts)
+      )
       .catch((err: Error) => {
         console.error("Invalid file format:");
         console.error(err);
