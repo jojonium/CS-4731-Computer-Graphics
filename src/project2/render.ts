@@ -11,6 +11,8 @@ export type TransformOpts = {
   yTranslateCount: number;
   shouldZTranslate: -1 | 0 | 1;
   zTranslateCount: number;
+  shouldXRoll: boolean;
+  xRollCount: number;
   shouldPulse: boolean;
   pulseCount: number;
 };
@@ -26,6 +28,8 @@ export const initTransformOpts = (): TransformOpts => {
     yTranslateCount: 0,
     shouldZTranslate: 0,
     zTranslateCount: 0,
+    shouldXRoll: false,
+    xRollCount: 0,
     shouldPulse: false,
     pulseCount: 0
   };
@@ -91,6 +95,11 @@ export const render = (
       ])
     )
     .translate(userTranslateVec);
+  const rotated = modelView.rotate(
+    0.01 * topts.xRollCount,
+    new vec3([1, 0, 0])
+  );
+  if (rotated !== null) modelView = rotated;
 
   const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
   gl.uniformMatrix4fv(
@@ -136,12 +145,11 @@ export const render = (
   }
 
   // change transformation values for next frame
-  if (topts.shouldPulse) {
-    topts.pulseCount++;
-  }
   topts.xTranslateCount += topts.shouldXTranslate;
   topts.yTranslateCount += topts.shouldYTranslate;
   topts.zTranslateCount += topts.shouldZTranslate;
+  if (topts.shouldXRoll) topts.xRollCount++;
+  if (topts.shouldPulse) topts.pulseCount++;
 
   GLOBALS.callbackID = requestAnimationFrame(
     (timeStamp: DOMHighResTimeStamp) => {

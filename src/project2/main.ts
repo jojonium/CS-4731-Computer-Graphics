@@ -43,9 +43,6 @@ function main(): void {
   document.addEventListener("keypress", (ev: KeyboardEvent) => {
     const key = ev.key.toLowerCase();
     switch (key) {
-      case "b":
-        transformOpts.shouldPulse = !transformOpts.shouldPulse;
-        break;
       case "x":
         transformOpts.shouldXTranslate =
           transformOpts.shouldXTranslate === 0 ? 1 : 0;
@@ -69,6 +66,12 @@ function main(): void {
       case "a":
         transformOpts.shouldZTranslate =
           transformOpts.shouldZTranslate === 0 ? -1 : 0;
+        break;
+      case "r":
+        transformOpts.shouldXRoll = !transformOpts.shouldXRoll;
+        break;
+      case "b":
+        transformOpts.shouldPulse = !transformOpts.shouldPulse;
         break;
     }
   });
