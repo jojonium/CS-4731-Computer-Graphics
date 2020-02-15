@@ -7,7 +7,8 @@ import { GLOBALS } from "./main";
 export type TransformOpts = {
   scale: number;
   translate: vec3;
-  pulseDistance: number;
+  shouldPulse: boolean;
+  pulseCount: number;
 };
 
 /**
@@ -16,7 +17,6 @@ export type TransformOpts = {
  * @param program the WebGL program we're using
  * @param polygons the list of polygons, represented as arrays of vec3s
  * @param extents the max and min dimensions of the model
- * @param frameNum the number of this frame
  * @param topts transform options
  */
 export const render = (
@@ -25,7 +25,6 @@ export const render = (
   program: WebGLProgram,
   polygons: vec3[][],
   extents: Extents,
-  frameNum: number,
   topts: TransformOpts
 ): void => {
   // set view port and clear canvas
@@ -75,9 +74,9 @@ export const render = (
   );
 
   // apply transformations to the vertices
-  const transformedPolygons = polygons.map(poly =>
-    pulse(poly, topts.pulseDistance)
-  );
+  const pulseDistance =
+    -((Math.sin(topts.pulseCount / 10 - Math.PI / 2) + 1) * 0.05) / scaleFactor;
+  const transformedPolygons = polygons.map(poly => pulse(poly, pulseDistance));
   const vertices = flatten(transformedPolygons);
 
   // buffer the vertices
@@ -111,11 +110,13 @@ export const render = (
   }
 
   // change transformation values for next frame
-  topts.pulseDistance = -((Math.cos(frameNum / 10) + 1) * 0.05) / scaleFactor;
+  if (topts.shouldPulse) {
+    topts.pulseCount++;
+  }
 
   GLOBALS.callbackID = requestAnimationFrame(
     (timeStamp: DOMHighResTimeStamp) => {
-      render(canvas, gl, program, polygons, extents, frameNum + 1, topts);
+      render(canvas, gl, program, polygons, extents, topts);
     }
   );
 };

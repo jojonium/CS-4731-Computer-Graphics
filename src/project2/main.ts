@@ -39,11 +39,19 @@ function main(): void {
   gl.useProgram(program);
 
   // set initial transformation options
-  const initialOpts: TransformOpts = {
+  const transformOpts: TransformOpts = {
     scale: 1,
     translate: new vec3([0, 0, 0]),
-    pulseDistance: 0
+    shouldPulse: false,
+    pulseCount: 0
   };
+
+  document.addEventListener("keypress", (ev: KeyboardEvent) => {
+    const key = ev.key.toLowerCase();
+    if (key === "b") {
+      transformOpts.shouldPulse = !transformOpts.shouldPulse;
+    }
+  });
 
   // handle a file being uploaded
   fileInput.addEventListener("change", () => {
@@ -53,7 +61,7 @@ function main(): void {
     getInput(fileInput)
       .then(parseFileText)
       .then(obj =>
-        render(canvas, gl, program, obj.polygons, obj.extents, 0, initialOpts)
+        render(canvas, gl, program, obj.polygons, obj.extents, transformOpts)
       )
       .catch((err: Error) => {
         console.error(err);
