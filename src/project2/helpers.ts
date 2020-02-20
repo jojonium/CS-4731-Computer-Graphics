@@ -19,7 +19,7 @@ export const normal = (p0: vec3, p1: vec3, p2: vec3): vec3 =>
  * moves the polygon outward along the normal vector by the given distance,
  * returning the restulting polygon
  */
-export const pulse = (polygon: vec3[], distance: number) => {
+export const pulse = (polygon: vec3[], distance: number): vec3[] => {
   const scaledNormal = normal(polygon[0], polygon[1], polygon[2]).scale(
     distance
   );
@@ -55,7 +55,7 @@ export const createCanvas = (): HTMLCanvasElement => {
 
 /**
  * create an <input type="color"> element and add it to #input-container
- * @return teh created input element
+ * @return the created input element
  */
 export const createColorInput = (): HTMLInputElement => {
   // remove any existing input
