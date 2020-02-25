@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Joseph Petitti CS 4731 Final Project, Part 1</title>
+    <link rel="stylesheet" href="style.css" />
+    <script id="vshader" type="x-shader/x-vertex">
+      attribute vec4 vPosition;
+      attribute vec4 vColor;
+      uniform mat4 modelMatrix;
+      uniform mat4 projMatrix;
+      varying vec4 fColor;
+      varying float depth;
+      void main() {
+        gl_Position = projMatrix * modelMatrix * vPosition;
+        gl_PointSize = 10.0;
+        fColor = vColor;
+        float far_plane = 3.0;
+        depth = ((gl_Position.z * 0.75) - 0.5) / far_plane;
+      }
+    </script>
+    <script id="fshader" type="x-shader/x-fragment">
+      precision mediump float;
+      varying vec4 fColor;
+      varying float depth;
+      void main() {
+        // TODO add checks for various option flags here
+        gl_FragColor = fColor;
+      }
+    </script>
+    <script src="bundle.js"></script>
+  </head>
+
+  <body>
+    <h2 id="mode">Final Project, Part 1</h2>
+    <div id="canvas-container"></div>
+    <div id="input-container"></div>
+
+    <div id="explanation"></div>
+  </body>
+</html>
