@@ -90,9 +90,9 @@ export const createColorInput = (): HTMLInputElement => {
  * @param s ratio of first to second
  */
 export const mix = (u: vec3, v: vec3, s: number): vec3 => {
-  const out = new Array<number>(u.length());
-  for (let i = 0; i < u.length(); ++i) {
-    out[i] = (1 - s) * u.at(i) + s * v.at(i);
-  }
-  return new vec3(out as [number, number, number]);
+  return new vec3([
+    (1 - s) * u.x + s * v.x,
+    (1 - s) * u.y + s * v.y,
+    (1 - s) * u.z + s * v.z
+  ]);
 };

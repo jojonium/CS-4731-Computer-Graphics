@@ -7,7 +7,7 @@ import { flatten } from "./helpers";
  */
 export class MobileElement {
   /** the triangles used to draw this object */
-  private polygons: vec3[][];
+  private vertices: vec3[];
   /** polygons as an array ready to pass to webgl */
   private pointData: Float32Array;
   /** the list of mobile elements that hang below this one, possibly empty */
@@ -18,21 +18,23 @@ export class MobileElement {
   private color: number[];
   /** array of the color of this mesh as long as the list of vertices */
   private colorData: Float32Array;
+  /** whether to draw the mesh as a wireframe */
+  private wireframe = true;
 
   /**
    * creates a new element with a model
    * @param mesh the polygons of the model
    */
   public constructor(mesh: vec3[][], color: [number, number, number, number]) {
-    this.polygons = mesh;
+    this.vertices = flatten(mesh);
     this.pointData = Float32Array.from(
-      flatten(flatten(this.polygons).map(vec => [vec.x, vec.y, vec.z, 1]))
+      flatten(this.vertices.map(vec => [vec.x, vec.y, vec.z, 1.0]))
     );
     this.children = new Array<MobileElement>();
     this.parent = undefined;
     this.color = color;
     this.colorData = Float32Array.from(
-      flatten(this.polygons.map(() => this.color))
+      flatten(this.vertices.map(() => this.color))
     );
   }
 
@@ -60,7 +62,13 @@ export class MobileElement {
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
-    gl.drawArrays(gl.TRIANGLES, 0, this.polygons.length);
+    if (this.wireframe) {
+      for (let i = 0; i < this.vertices.length - 2; i += 3) {
+        gl.drawArrays(gl.LINE_LOOP, i, 3);
+      }
+    } else {
+      gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length);
+    }
 
     // TODO offset and draw horizontal/vertical lines
     // draw children

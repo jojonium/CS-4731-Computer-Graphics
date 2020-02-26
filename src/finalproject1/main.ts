@@ -8,7 +8,7 @@ import { setupWebGL } from "./lib/webgl-utils";
 import { render } from "./render";
 import { parseFileText, createFileInput, getInput } from "./file";
 import { MobileElement } from "./MobileElement";
-import { getCube } from "./models";
+import { getCube, getSphere } from "./models";
 
 export type Extents = {
   minX: number;
@@ -38,10 +38,7 @@ function main(): void {
   const fileInput = createFileInput();
 
   // create the mobile
-  const mobile = new MobileElement(getCube(), [1, 0, 0, 1]);
-
-  // initialize line color as white
-  const lineColor = [1.0, 1.0, 1.0, 1.0];
+  const mobile = new MobileElement(getSphere(), [1, 0, 0, 1]);
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -69,7 +66,7 @@ function main(): void {
       cancelAnimationFrame(GLOBALS.callbackID);
 
     // get donut mesh from the server
-    render(canvas, gl, program, mobile, lineColor);
+    render(canvas, gl, program, mobile);
   };
 
   startDrawing();

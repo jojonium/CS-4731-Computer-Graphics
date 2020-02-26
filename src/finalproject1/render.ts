@@ -9,14 +9,12 @@ import { MobileElement } from "./MobileElement";
  * @param program the WebGL program we're using
  * @param polygons the list of polygons, represented as arrays of vec3s
  * @param extents the max and min dimensions of the model
- * @param lineColor color used for drawing lines as [r, g, b, a], each 0-1
  */
 export const render = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
-  mobile: MobileElement,
-  lineColor: number[]
+  mobile: MobileElement
 ): void => {
   // set view port and clear canvas
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -49,6 +47,6 @@ export const render = (
   mobile.draw(gl, program);
 
   GLOBALS.callbackID = requestAnimationFrame(() => {
-    render(canvas, gl, program, mobile, lineColor);
+    //render(canvas, gl, program, mobile);
   });
 };
