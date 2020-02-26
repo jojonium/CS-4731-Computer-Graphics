@@ -5,9 +5,10 @@
 import { createCanvas } from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import { setupWebGL } from "./lib/webgl-utils";
-import { initTransformOpts, render } from "./render";
+import { render } from "./render";
 import { parseFileText, createFileInput, getInput } from "./file";
-import vec3 from "./lib/tsm/vec3";
+import { MobileElement } from "./MobileElement";
+import { getCube } from "./models";
 
 export type Extents = {
   minX: number;
@@ -16,11 +17,6 @@ export type Extents = {
   maxX: number;
   maxY: number;
   maxZ: number;
-};
-
-export type MobileElement = {
-  polygons: vec3[][];
-  extents: Extents;
 };
 
 /**
@@ -32,10 +28,7 @@ export const GLOBALS = {
    * global variable used to store the ID of the animation callback so it can be
    * cancelled later
    */
-  callbackID: undefined as number | undefined,
-  mobile: {
-    layer1: new Array<MobileElement>()
-  }
+  callbackID: undefined as number | undefined
 };
 
 function main(): void {
@@ -43,6 +36,9 @@ function main(): void {
   const canvas = createCanvas();
   // create file input
   const fileInput = createFileInput();
+
+  // create the mobile
+  const mobile = new MobileElement(getCube(), [1, 0, 0, 1]);
 
   // initialize line color as white
   const lineColor = [1.0, 1.0, 1.0, 1.0];
@@ -58,7 +54,14 @@ function main(): void {
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
-  const transformOpts = initTransformOpts();
+  // handle a file being uploaded
+  fileInput.addEventListener("change", () => {
+    getInput(fileInput)
+      .then(parseFileText)
+      .then(obj => {
+        // TODO add object to the mobile
+      });
+  });
 
   const startDrawing = (): void => {
     // cancel any existing animation
@@ -66,73 +69,8 @@ function main(): void {
       cancelAnimationFrame(GLOBALS.callbackID);
 
     // get donut mesh from the server
-    render(canvas, gl, program, GLOBALS.mobile, transformOpts, lineColor);
+    render(canvas, gl, program, mobile, lineColor);
   };
-
-  // handle a file being uploaded
-  fileInput.addEventListener("change", () => {
-    getInput(fileInput)
-      .then(parseFileText)
-      .then((me: MobileElement) => {
-        // add object to the mobile
-        GLOBALS.mobile.layer1.push(me);
-      });
-  });
-
-  // deal with key presses
-  document.addEventListener("keypress", (ev: KeyboardEvent) => {
-    const key = ev.key.toLowerCase();
-    switch (key) {
-      case "x":
-        transformOpts.shouldXTranslate =
-          transformOpts.shouldXTranslate === 0 ? 1 : 0;
-        break;
-      case "c":
-        transformOpts.shouldXTranslate =
-          transformOpts.shouldXTranslate === 0 ? -1 : 0;
-        break;
-      case "y":
-        transformOpts.shouldYTranslate =
-          transformOpts.shouldYTranslate === 0 ? 1 : 0;
-        break;
-      case "u":
-        transformOpts.shouldYTranslate =
-          transformOpts.shouldYTranslate === 0 ? -1 : 0;
-        break;
-      case "z":
-        transformOpts.shouldZTranslate =
-          transformOpts.shouldZTranslate === 0 ? 1 : 0;
-        break;
-      case "a":
-        transformOpts.shouldZTranslate =
-          transformOpts.shouldZTranslate === 0 ? -1 : 0;
-        break;
-      case "r":
-        transformOpts.shouldXRoll = transformOpts.shouldXRoll === 0 ? 1 : 0;
-        break;
-      case "t":
-        transformOpts.shouldXRoll = transformOpts.shouldXRoll === 0 ? -1 : 0;
-        break;
-      case "f":
-        transformOpts.shouldYRoll = transformOpts.shouldYRoll === 0 ? 1 : 0;
-        break;
-      case "g":
-        transformOpts.shouldYRoll = transformOpts.shouldYRoll === 0 ? -1 : 0;
-        break;
-      case "h":
-        transformOpts.shouldZRoll = transformOpts.shouldZRoll === 0 ? 1 : 0;
-        break;
-      case "j":
-        transformOpts.shouldZRoll = transformOpts.shouldZRoll === 0 ? -1 : 0;
-        break;
-      case "b":
-        transformOpts.shouldPulse = !transformOpts.shouldPulse;
-        break;
-      case "n":
-        transformOpts.drawNormals = !transformOpts.drawNormals;
-        break;
-    }
-  });
 
   startDrawing();
 }

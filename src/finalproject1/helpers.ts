@@ -82,3 +82,17 @@ export const createColorInput = (): HTMLInputElement => {
   document.getElementById("input-container")?.appendChild(span);
   return input;
 };
+
+/**
+ * mixes two vectors according to a ratio
+ * @param u first vector
+ * @param v second vector
+ * @param s ratio of first to second
+ */
+export const mix = (u: vec3, v: vec3, s: number): vec3 => {
+  const out = new Array<number>(u.length());
+  for (let i = 0; i < u.length(); ++i) {
+    out[i] = (1 - s) * u.at(i) + s * v.at(i);
+  }
+  return new vec3(out as [number, number, number]);
+};

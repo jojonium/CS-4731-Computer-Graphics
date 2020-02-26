@@ -1,5 +1,5 @@
 import vec3 from "./lib/tsm/vec3";
-import { MobileElement } from "./main";
+import { Extents } from "./main";
 
 /**
  * create an <input type="file"> element and add it to #input-container
@@ -49,7 +49,9 @@ export const getInput = (elt: HTMLInputElement): Promise<string> => {
  * @returns polygons the list of polygons as vec3 arrays
  * @returns extents the X, Y, and Z bounds of the figure
  */
-export const parseFileText = (str: string): MobileElement => {
+export const parseFileText = (
+  str: string
+): { polygons: vec3[][]; extents: Extents } => {
   let numVertices = 0;
   let numPolygons = 0;
   let headerDone = false;
