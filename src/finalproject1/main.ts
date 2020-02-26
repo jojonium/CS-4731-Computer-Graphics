@@ -1,21 +1,27 @@
 /**
- * Joseph Petitti - CS 4731 Computer Graphics Project 2
- *
- * Extra credit features:
- *   - You can roll the model in any of the six directional axes, rather than
- *     just positive x. 'R' and 'T' roll around the X axis, 'F' and 'G' roll
- *     around the Y axis, and 'H' and 'J' roll around the Z axis.
- *   - A color-picker for the color of the mesh's lines. It can be changed at
- *     any time, even while animating, and then canvas will update instantly
- *   - The mesh can translate or rotate in any number of directions at once.
- *   - Press 'N' to toggle drawing normal vectors for each face.
+ * Joseph Petitti - CS 4731 Computer Graphics Final Project, Part 1
  */
 
-import { createFileInput, getInput, parseFileText } from "./file";
-import { createCanvas, createColorInput } from "./helpers";
+import { createCanvas } from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import { setupWebGL } from "./lib/webgl-utils";
 import { initTransformOpts, render } from "./render";
+import { parseFileText, createFileInput, getInput } from "./file";
+import vec3 from "./lib/tsm/vec3";
+
+export type Extents = {
+  minX: number;
+  minY: number;
+  minZ: number;
+  maxX: number;
+  maxY: number;
+  maxZ: number;
+};
+
+export type MobileElement = {
+  polygons: vec3[][];
+  extents: Extents;
+};
 
 /**
  * All global variables are stored in this object to make them accessible from
@@ -26,19 +32,20 @@ export const GLOBALS = {
    * global variable used to store the ID of the animation callback so it can be
    * cancelled later
    */
-  callbackID: undefined as number | undefined
+  callbackID: undefined as number | undefined,
+  mobile: {
+    layer1: new Array<MobileElement>()
+  }
 };
 
 function main(): void {
   // create the <canvas> element
   const canvas = createCanvas();
-  // create the file upload input
+  // create file input
   const fileInput = createFileInput();
-  // create input for line color picker
-  const lineColorInput = createColorInput();
 
   // initialize line color as white
-  let lineColor = [1.0, 1.0, 1.0, 1.0];
+  const lineColor = [1.0, 1.0, 1.0, 1.0];
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -51,29 +58,26 @@ function main(): void {
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
-  let transformOpts = initTransformOpts();
+  const transformOpts = initTransformOpts();
 
   const startDrawing = (): void => {
     // cancel any existing animation
     if (GLOBALS.callbackID !== undefined)
       cancelAnimationFrame(GLOBALS.callbackID);
+
+    // get donut mesh from the server
+    render(canvas, gl, program, GLOBALS.mobile, transformOpts, lineColor);
+  };
+
+  // handle a file being uploaded
+  fileInput.addEventListener("change", () => {
     getInput(fileInput)
       .then(parseFileText)
-      .then(obj =>
-        render(
-          canvas,
-          gl,
-          program,
-          obj.polygons,
-          obj.extents,
-          transformOpts,
-          lineColor
-        )
-      )
-      .catch((err: Error) => {
-        console.error(err);
+      .then((me: MobileElement) => {
+        // add object to the mobile
+        GLOBALS.mobile.layer1.push(me);
       });
-  };
+  });
 
   // deal with key presses
   document.addEventListener("keypress", (ev: KeyboardEvent) => {
@@ -130,21 +134,7 @@ function main(): void {
     }
   });
 
-  lineColorInput.addEventListener("change", () => {
-    lineColor = [
-      parseInt(lineColorInput.value.slice(1, 3), 16) / 255,
-      parseInt(lineColorInput.value.slice(3, 5), 16) / 255,
-      parseInt(lineColorInput.value.slice(5, 7), 16) / 255,
-      1.0
-    ];
-    startDrawing();
-  });
-
-  // handle a file being uploaded
-  fileInput.addEventListener("change", () => {
-    transformOpts = initTransformOpts();
-    startDrawing();
-  });
+  startDrawing();
 }
 
 window.onload = main;

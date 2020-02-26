@@ -1,8 +1,7 @@
-import { Extents } from "./file";
 import { flatten, pulse, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec3 from "./lib/tsm/vec3";
-import { GLOBALS } from "./main";
+import { MobileElement, GLOBALS } from "./main";
 
 /**
  * options to pass between steps
@@ -61,8 +60,7 @@ export const render = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
-  polygons: vec3[][],
-  extents: Extents,
+  mobile: { layer1: MobileElement[] },
   topts: TransformOpts,
   lineColor: number[]
 ): void => {
@@ -87,96 +85,106 @@ export const render = (
   const upVec = new vec3([0, 1, 0]);
   let modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
-  // transform the modelView matrix
-  const scaleFactor =
-    1 /
-    Math.max(
-      extents.maxX - extents.minX,
-      extents.maxY - extents.minY,
-      extents.maxZ - extents.minZ
-    );
-  const userTranslateVec = new vec3([
-    topts.xTranslateCount,
-    topts.yTranslateCount,
-    topts.zTranslateCount
-  ]);
-  modelView = modelView
-    .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]))
-    .translate(
-      new vec3([
-        -0.5 * (extents.minX + extents.maxX),
-        -0.5 * (extents.minY + extents.maxY),
-        -0.5 * (extents.minZ + extents.maxZ)
-      ])
-    )
-    .translate(userTranslateVec);
-  // these null checks are annoying but necessary
-  let rotated = modelView.rotate(0.01 * topts.xRollCount, new vec3([1, 0, 0]));
-  if (rotated !== null)
-    rotated = rotated.rotate(0.01 * topts.yRollCount, new vec3([0, 1, 0]));
-  if (rotated !== null)
-    rotated = rotated.rotate(0.01 * topts.zRollCount, new vec3([0, 0, 1]));
-  if (rotated !== null) modelView = rotated;
+  for (const elt of mobile.layer1) {
+    // TODO scale elements so they appear the same size
 
-  const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-  gl.uniformMatrix4fv(
-    modelMatrixLoc,
-    false,
-    Float32Array.from(modelView.all())
-  );
-
-  // apply transformations to the vertices
-  const pulseDistance =
-    -((Math.sin(topts.pulseCount / 10 - Math.PI / 2) + 1) * 0.05) / scaleFactor;
-  const transformedPolygons = polygons.map(poly => pulse(poly, pulseDistance));
-  let vertices = flatten(transformedPolygons);
-
-  // add normals
-  if (topts.drawNormals) {
-    vertices = vertices.concat(
-      flatten(
-        polygons.map(poly => {
-          const center = new vec3([
-            (poly[0].x + poly[1].x + poly[2].x) / 3,
-            (poly[0].y + poly[1].y + poly[2].y) / 3,
-            (poly[0].z + poly[1].z + poly[2].z) / 3
-          ]);
-          return [center, vec3.difference(center, normal(poly)), center];
-        })
+    // transform the modelView matrix
+    const scaleFactor =
+      1 /
+      Math.max(
+        elt.extents.maxX - elt.extents.minX,
+        elt.extents.maxY - elt.extents.minY,
+        elt.extents.maxZ - elt.extents.minZ
+      );
+    const userTranslateVec = new vec3([
+      topts.xTranslateCount,
+      topts.yTranslateCount,
+      topts.zTranslateCount
+    ]);
+    modelView = modelView
+      .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]))
+      .translate(
+        new vec3([
+          -0.5 * (elt.extents.minX + elt.extents.maxX),
+          -0.5 * (elt.extents.minY + elt.extents.maxY),
+          -0.5 * (elt.extents.minZ + elt.extents.maxZ)
+        ])
       )
+      .translate(userTranslateVec);
+    // these null checks are annoying but necessary
+    let rotated = modelView.rotate(
+      0.01 * topts.xRollCount,
+      new vec3([1, 0, 0])
     );
-  }
+    if (rotated !== null)
+      rotated = rotated.rotate(0.01 * topts.yRollCount, new vec3([0, 1, 0]));
+    if (rotated !== null)
+      rotated = rotated.rotate(0.01 * topts.zRollCount, new vec3([0, 0, 1]));
+    if (rotated !== null) modelView = rotated;
 
-  // buffer the vertices
-  const vBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    Float32Array.from(
-      flatten(vertices.map((vec: vec3) => [vec.x, vec.y, vec.z, 1.0]))
-    ),
-    gl.STATIC_DRAW
-  );
+    const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+    gl.uniformMatrix4fv(
+      modelMatrixLoc,
+      false,
+      Float32Array.from(modelView.all())
+    );
 
-  const vPosition = gl.getAttribLocation(program, "vPosition");
-  gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vPosition);
+    // apply transformations to the vertices
+    const pulseDistance =
+      -((Math.sin(topts.pulseCount / 10 - Math.PI / 2) + 1) * 0.05) /
+      scaleFactor;
+    const transformedPolygons = elt.polygons.map(poly =>
+      pulse(poly, pulseDistance)
+    );
+    let vertices = flatten(transformedPolygons);
 
-  // buffer colors
-  const cBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  const colors = vertices.map(() => lineColor);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    Float32Array.from(flatten(colors)),
-    gl.STATIC_DRAW
-  );
-  const vColor = gl.getAttribLocation(program, "vColor");
-  gl.enableVertexAttribArray(vColor);
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    // add normals
+    if (topts.drawNormals) {
+      vertices = vertices.concat(
+        flatten(
+          elt.polygons.map(poly => {
+            const center = new vec3([
+              (poly[0].x + poly[1].x + poly[2].x) / 3,
+              (poly[0].y + poly[1].y + poly[2].y) / 3,
+              (poly[0].z + poly[1].z + poly[2].z) / 3
+            ]);
+            return [center, vec3.difference(center, normal(poly)), center];
+          })
+        )
+      );
+    }
 
-  for (let i = 0; i < vertices.length - 2; i += 3) {
-    gl.drawArrays(gl.LINE_LOOP, i, 3);
+    // buffer the vertices
+    const vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      Float32Array.from(
+        flatten(vertices.map((vec: vec3) => [vec.x, vec.y, vec.z, 1.0]))
+      ),
+      gl.STATIC_DRAW
+    );
+
+    const vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    // buffer colors
+    const cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    const colors = vertices.map(() => lineColor);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      Float32Array.from(flatten(colors)),
+      gl.STATIC_DRAW
+    );
+    const vColor = gl.getAttribLocation(program, "vColor");
+    gl.enableVertexAttribArray(vColor);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+
+    for (let i = 0; i < vertices.length - 2; i += 3) {
+      gl.drawArrays(gl.LINE_LOOP, i, 3);
+    }
   }
 
   // change transformation values for next frame
@@ -190,7 +198,7 @@ export const render = (
 
   GLOBALS.callbackID = requestAnimationFrame(
     (timeStamp: DOMHighResTimeStamp) => {
-      render(canvas, gl, program, polygons, extents, topts, lineColor);
+      render(canvas, gl, program, mobile, topts, lineColor);
     }
   );
 };
