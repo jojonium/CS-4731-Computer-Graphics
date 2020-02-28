@@ -38,7 +38,7 @@ export class MobileElement {
   /** width needed to fit all children */
   private childrenWidth: number;
   /** Rotation of next layer. 1 for ccw, -1 for cw, 0 for no rotation */
-  private nextRotDir: -1 | 0 | 1;
+  public nextRotDir: -1 | 0 | 1;
   /** number of radians to rotate next layer per frame */
   private nextRotSpeed: number;
   /** stepped variable to keep track of next layer's rotation */
@@ -59,7 +59,7 @@ export class MobileElement {
     this.colorData = Float32Array.from(
       flatten(this.vertices.map(() => this.color))
     );
-    this.rotDir = -1;
+    this.rotDir = 1;
     this.rotSpeed = Math.PI / 180;
     this.rotStep = 0;
     this.nextRotDir = 1;
