@@ -37,16 +37,15 @@ export const render = (
   const upVec = new vec3([0, 1, 0]);
   const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
-  const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-  gl.uniformMatrix4fv(
-    modelMatrixLoc,
-    false,
-    Float32Array.from(modelView.all())
-  );
+  // scale and translate to fit the mobile
+  const s = 1 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
+  modelView
+    .scale(new vec3([s, s, s]))
+    .translate(new vec3([0, mobile.getTotalHeight() / 2, 0]));
 
-  mobile.draw(gl, program);
+  mobile.draw(gl, program, modelView);
 
   GLOBALS.callbackID = requestAnimationFrame(() => {
-    //render(canvas, gl, program, mobile);
+    render(canvas, gl, program, mobile);
   });
 };
