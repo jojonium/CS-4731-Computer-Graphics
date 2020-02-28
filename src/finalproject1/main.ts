@@ -72,6 +72,7 @@ function main(): void {
   const program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
   gl.cullFace(gl.BACK);
+  gl.enable(gl.DEPTH_TEST);
 
   // handle a file being uploaded
   fileInput.addEventListener("change", () => {
