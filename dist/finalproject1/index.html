@@ -7,26 +7,42 @@
     <script id="vshader" type="x-shader/x-vertex">
       attribute vec4 vPosition;
       attribute vec4 vNormal;
-      uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-      uniform vec4 lightPosition;
-      //attribute vec4 vColor;
-      uniform mat4 modelMatrix;
-      uniform mat4 projMatrix;
       varying vec4 fColor;
+      uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+      uniform mat4 projMatrix;
+      uniform mat4 modelMatrix;
+      uniform vec4 lightPosition;
       uniform float shininess;
+      uniform float phi;
       varying float depth;
       void main() {
+        // vertex position in eye coords
         vec3 pos = (modelMatrix * vPosition).xyz;
+        // vector from vertex to light
         vec3 L = normalize(lightPosition.xyz - pos);
+        vec3 E = normalize(-pos);
+        // transform vertex normal to eye coords
         vec3 N = normalize(modelMatrix * vNormal).xyz;
-        vec3 V = normalize(-pos);
-        vec3 R = (2.0 * dot(L, N) * N) - L;
-        vec4 diffuse = diffuseProduct * dot(L, N);
+        // illumination
+        float Kd = dot(L, N);
+        vec3 H = (2.0 * Kd * N) - L;
         vec4 ambient = ambientProduct;
-        vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
+        float Ks = pow(max(dot(N, H), 0.0), shininess);
+        // make faces dark if not in the spotlight
+        vec4 diffuse = vec4(0, 0, 0, 0);
+        vec4 specular = vec4(0, 0, 0, 0);
+        vec3 lightDir = normalize(vec3(-2, -1, -2));
+        // determine if face is in spotlight
+        if (dot(L, -lightDir) > phi) {
+          diffuse = Kd * diffuseProduct;
+          specular = Ks * specularProduct;
+        }
+
+        gl_Position = projMatrix * modelMatrix * vPosition;
+
         fColor = diffuse + specular + ambient;
         fColor.a = 1.0;
-        gl_Position = projMatrix * modelMatrix * vPosition;
+
         float far_plane = 3.0;
         depth = ((gl_Position.z * 0.75) - 0.5) / far_plane;
       }

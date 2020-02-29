@@ -2,11 +2,22 @@ import vec3 from "./lib/tsm/vec3";
 import { flatten, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec4 from "./lib/tsm/vec4";
+import { GLOBALS } from "./main";
 
 /** how far apart siblings are */
 const X_SEPARATION = 3;
 /** how far apart parents and children are */
 const Y_SEPARATION = 1.5;
+
+const lightPosition = new vec4([1.0, 1.0, -1.0, 0.0]);
+const lightAmbient = new vec4([0.2, 0.2, 0.2, 1.0]);
+const lightDiffuse = new vec4([1.0, 1.0, 1.0, 1.0]);
+const lightSpecular = new vec4([1.0, 1.0, 1.0, 1.0]);
+
+const materialAmbient = new vec4([1.0, 0.9, 1.0, 1.0]);
+const materialDiffuse = new vec4([1.0, 0.8, 0.7, 1.0]);
+const materialShininess = 20.0;
+const phi = 0.9;
 
 /**
  * This is one element of the mobile tree hierarchy. It may have children or a
@@ -24,9 +35,7 @@ export class MobileElement {
   /** optionally the element above this one */
   private parent: MobileElement | undefined;
   /** rgba, each 0-1 */
-  private color: number[];
-  /** array of the color of this mesh as long as the list of vertices */
-  private colorData: Float32Array;
+  private color: vec4;
   /** whether to draw the mesh as a wireframe */
   private wireframe = false;
   /** 1 for counterclockwise, -1 for clockwise, 0 for no rotation */
@@ -50,7 +59,7 @@ export class MobileElement {
    * creates a new element with a model
    * @param mesh the polygons of the model
    */
-  public constructor(mesh: vec3[][], color: [number, number, number, number]) {
+  public constructor(mesh: vec3[][], color: vec4) {
     // convert mesh into Float32Array for webgl
     this.vertices = flatten(mesh);
     this.pointData = Float32Array.from(
@@ -58,16 +67,25 @@ export class MobileElement {
     );
 
     // calculate normals
-    this.normalData = Float32Array.from(
-      flatten(mesh.map(normal).map(vec => [vec.x, vec.y, vec.z, 1.0]))
-    );
+    const normals: vec4[] = [];
+    for (const poly of mesh) {
+      const temp = normal(poly);
+      const n = new vec4([temp.x, temp.y, temp.z, 0.0]);
+      for (const vec of poly) {
+        if (GLOBALS.flat) normals.push(n);
+        else normals.push(new vec4([vec.x, vec.y, vec.z, 0.0]));
+      }
+    }
+    this.normalData = Float32Array.from(flatten(normals.map(a => a.xyzw)));
 
     this.children = new Array<MobileElement>();
     this.parent = undefined;
     this.color = color;
+    /*
     this.colorData = Float32Array.from(
-      flatten(this.vertices.map(() => this.color))
+      flatten(this.vertices.map(() => this.color.xyzw))
     );
+    */
     this.rotDir = 1;
     this.rotSpeed = Math.PI / 180;
     this.rotStep = 0;
@@ -131,6 +149,22 @@ export class MobileElement {
   ): void {
     const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
 
+    // buffer vertex data
+    const pBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.pointData, gl.STATIC_DRAW);
+    const vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    // buffer normals
+    const vNormal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+    gl.bufferData(gl.ARRAY_BUFFER, this.normalData, gl.STATIC_DRAW);
+    const vNormalPosition = gl.getAttribLocation(program, "vNormal");
+    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormalPosition);
+
     // apply a rotation to spin this shape
     const rotatedMatrix = mvMatrix
       .copy()
@@ -145,25 +179,37 @@ export class MobileElement {
       Float32Array.from(rotatedMatrix.all())
     );
 
-    // buffer vertex data
-    const pBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.pointData, gl.STATIC_DRAW);
-
-    const vPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition);
-
-    // buffer color data
-    /*
-    const cBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.colorData, gl.STATIC_DRAW);
-
-    const vColor = gl.getAttribLocation(program, "vColor");
-    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vColor);
-   */
+    // set lighting attributes
+    const diffuseProduct = vec4.product(
+      vec4.product(lightDiffuse, this.color),
+      this.color
+    );
+    const specularProduct = vec4.product(lightSpecular, materialDiffuse);
+    const ambientProduct = vec4.product(
+      vec4.product(lightAmbient, materialAmbient),
+      this.color
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "diffuseProduct"),
+      Float32Array.from(diffuseProduct.xyzw)
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "specularProduct"),
+      Float32Array.from(specularProduct.xyzw)
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "ambientProduct"),
+      Float32Array.from(ambientProduct.xyzw)
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "lightPosition"),
+      Float32Array.from(lightPosition.xyzw)
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(program, "shininess"),
+      materialShininess
+    );
+    gl.uniform1f(gl.getUniformLocation(program, "phi"), phi);
 
     // draw wireframe or solid object
     if (this.wireframe) {
@@ -182,14 +228,6 @@ export class MobileElement {
         Float32Array.from([0, Y_SEPARATION / 2, 0, 1, 0, 0, 0, 1]),
         gl.STATIC_DRAW
       );
-      /*
-      gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-      gl.bufferData(
-        gl.ARRAY_BUFFER,
-        Float32Array.from([0, 0, 0, 1, 0, 0, 0, 1]),
-        gl.STATIC_DRAW
-      );
-     */
       gl.drawArrays(gl.LINES, 0, 2);
     }
 
@@ -215,26 +253,7 @@ export class MobileElement {
       Float32Array.from(flatten(strings.map(v => v.xyzw))),
       gl.STATIC_DRAW
     );
-    /*
-    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      Float32Array.from(flatten(strings.map(() => [0, 0, 0, 1]))),
-      gl.STATIC_DRAW
-    );
-   */
     gl.drawArrays(gl.LINES, 0, strings.length);
-
-    // buffer normals
-    /*
-    const vNormal = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-    gl.bufferData(gl.ARRAY_BUFFER, this.normalData, gl.STATIC_DRAW);
-
-    const vNormalPosition = gl.getAttribLocation(program, "vNormal");
-    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vNormalPosition);
-   */
 
     this.children.forEach((child, index) => {
       // offset children so they all fit side by side

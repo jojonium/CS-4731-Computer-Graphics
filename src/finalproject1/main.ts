@@ -9,6 +9,7 @@ import { render } from "./render";
 import { parseFileText, createFileInput, getInput } from "./file";
 import { MobileElement } from "./MobileElement";
 import { getCube, getSphere } from "./models";
+import vec4 from "./lib/tsm/vec4";
 
 export type Extents = {
   minX: number;
@@ -28,7 +29,9 @@ export const GLOBALS = {
    * global variable used to store the ID of the animation callback so it can be
    * cancelled later
    */
-  callbackID: undefined as number | undefined
+  callbackID: undefined as number | undefined,
+  /** true if we're using flat shading, false for Gourand */
+  flat: false
 };
 
 function main(): void {
@@ -38,30 +41,30 @@ function main(): void {
   const fileInput = createFileInput();
 
   // create the mobile
-  const mobile = new MobileElement(getSphere(), [0.05, 0.06, 0.04, 1]);
+  const mobile = new MobileElement(getSphere(), new vec4([0.0, 0.0, 1.0, 1]));
   mobile.nextRotDir = 1;
   // level 1
-  const a1 = new MobileElement(getCube(), [1, 0.13, 0.43, 1]);
+  const a1 = new MobileElement(getCube(), new vec4([1, 0.0, 0.0, 1]));
   a1.nextRotDir = -1;
-  const a2 = new MobileElement(getSphere(), [0.98, 1, 0.07, 1]);
-  const a3 = new MobileElement(getCube(), [0.25, 0.92, 0.83, 1]);
+  const a2 = new MobileElement(getSphere(), new vec4([0.98, 1, 0.07, 1]));
+  const a3 = new MobileElement(getCube(), new vec4([0.25, 0.92, 0.83, 1]));
   mobile.addChild(a1);
   mobile.addChild(a2);
   mobile.addChild(a3);
   // level 2
-  const b1 = new MobileElement(getSphere(), [0.32, 0.28, 0.61, 1]);
+  const b1 = new MobileElement(getSphere(), new vec4([0.32, 0.28, 0.61, 1]));
   b1.nextRotDir = 1;
-  const b2 = new MobileElement(getCube(), [0.35, 0.76, 0.76, 1]);
-  const b3 = new MobileElement(getCube(), [0.75, 0.87, 0.52, 1]);
+  const b2 = new MobileElement(getCube(), new vec4([0.35, 0.76, 0.76, 1]));
+  const b3 = new MobileElement(getCube(), new vec4([0.75, 0.87, 0.52, 1]));
   b3.nextRotDir = 1;
   a1.addChild(b1);
   a1.addChild(b2);
   a3.addChild(b3);
   // level 3
-  const c1 = new MobileElement(getSphere(), [0.49, 0.87, 0.39, 1]);
-  const c2 = new MobileElement(getSphere(), [0.89, 0.71, 0.02, 1]);
-  const c3 = new MobileElement(getSphere(), [0.03, 0.3, 0.38, 1]);
-  const c4 = new MobileElement(getCube(), [0.41, 0.92, 0.82, 1]);
+  const c1 = new MobileElement(getSphere(), new vec4([0.49, 0.87, 0.39, 1]));
+  const c2 = new MobileElement(getSphere(), new vec4([0.89, 0.71, 0.02, 1]));
+  const c3 = new MobileElement(getSphere(), new vec4([0.03, 0.3, 0.38, 1]));
+  const c4 = new MobileElement(getCube(), new vec4([0.41, 0.92, 0.82, 1]));
   b1.addChild(c1);
   b3.addChild(c2);
   b3.addChild(c3);
