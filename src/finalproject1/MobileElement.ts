@@ -2,6 +2,7 @@ import vec3 from "./lib/tsm/vec3";
 import { flatten, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec4 from "./lib/tsm/vec4";
+import { defaultExtents, Extents } from "./main";
 
 /** how far apart siblings are */
 const X_SEPARATION = 3;
@@ -26,6 +27,8 @@ export class MobileElement {
   private mesh: vec3[][];
   /** the triangles used to draw this object */
   private vertices: vec3[];
+  /** extents of the mesh */
+  private extents: Extents;
   /** polygons as an array ready to pass to webgl */
   private pointData: Float32Array;
   /** normals as an array ready to pass to webgl */
@@ -59,9 +62,11 @@ export class MobileElement {
    * creates a new element with a model
    * @param mesh the polygons of the model
    * @param color the r, g, b, a components of this mesh's color
+   * @param extents the extents of the mesh
    */
-  public constructor(mesh: vec3[][], color: vec4) {
+  public constructor(mesh: vec3[][], color: vec4, extents = defaultExtents()) {
     this.mesh = mesh;
+    this.extents = extents;
     // convert mesh into Float32Array for webgl
     this.vertices = flatten(mesh);
     this.pointData = Float32Array.from(
@@ -158,18 +163,28 @@ export class MobileElement {
     gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vNormalPosition);
 
-    // apply a rotation to spin this shape
-    const rotatedMatrix = mvMatrix
+    const scaleFactor =
+      1 /
+      Math.max(
+        this.extents.maxX - this.extents.minX,
+        this.extents.maxY - this.extents.minY,
+        this.extents.maxZ - this.extents.minZ
+      );
+    const transformedMatrix = mvMatrix
       .copy()
+      // scale based on extents
+      .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]))
+      // apply a rotation to spin this shape
       .rotate(
         this.rotDir * this.rotSpeed * this.rotStep++,
         new vec3([0, 1, 0])
       );
-    if (rotatedMatrix === null) throw new Error("Failed to rotate");
+    if (transformedMatrix === null) throw new Error("Failed to rotate");
+
     gl.uniformMatrix4fv(
       modelMatrixLoc,
       false,
-      Float32Array.from(rotatedMatrix.all())
+      Float32Array.from(transformedMatrix.all())
     );
 
     // set lighting attributes
@@ -217,7 +232,16 @@ export class MobileElement {
       gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
       gl.bufferData(
         gl.ARRAY_BUFFER,
-        Float32Array.from([0, Y_SEPARATION / 2, 0, 1, 0, 0, 0, 1]),
+        Float32Array.from([
+          0,
+          Y_SEPARATION / (2 * scaleFactor),
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]),
         gl.STATIC_DRAW
       );
       gl.drawArrays(gl.LINES, 0, 2);
@@ -313,17 +337,14 @@ export class MobileElement {
 
   /**
    * adds a new element somewhere below this one
-   * @param mesh mesh to add
-   * @param color color of mesh
+   * @param me the element to add
    */
-  public randomAdd(mesh: vec3[][], color: vec4): void {
+  public randomAdd(me: MobileElement): void {
     const r = Math.random();
     if (r < 1 / (this.children.length + 1)) {
-      this.addChild(new MobileElement(mesh, color));
+      this.addChild(me);
       return;
     }
-    this.children[Math.floor(r * this.children.length)].addChild(
-      new MobileElement(mesh, color)
-    );
+    this.children[Math.floor(r * this.children.length)].addChild(me);
   }
 }

@@ -38,7 +38,7 @@ export const render = (
   const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
   // scale and translate to fit the mobile
-  const s = 1 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
+  const s = 1.5 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
   modelView
     .scale(new vec3([s, s, s]))
     .translate(new vec3([0, mobile.getTotalHeight() / 2, 0]));
