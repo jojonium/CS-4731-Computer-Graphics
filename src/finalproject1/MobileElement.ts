@@ -1,5 +1,5 @@
 import vec3 from "./lib/tsm/vec3";
-import { flatten } from "./helpers";
+import { flatten, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec4 from "./lib/tsm/vec4";
 
@@ -17,6 +17,8 @@ export class MobileElement {
   private vertices: vec3[];
   /** polygons as an array ready to pass to webgl */
   private pointData: Float32Array;
+  /** normals as an array ready to pass to webgl */
+  private normalData: Float32Array;
   /** the list of mobile elements that hang below this one, possibly empty */
   private children: MobileElement[];
   /** optionally the element above this one */
@@ -49,10 +51,17 @@ export class MobileElement {
    * @param mesh the polygons of the model
    */
   public constructor(mesh: vec3[][], color: [number, number, number, number]) {
+    // convert mesh into Float32Array for webgl
     this.vertices = flatten(mesh);
     this.pointData = Float32Array.from(
       flatten(this.vertices.map(vec => [vec.x, vec.y, vec.z, 1.0]))
     );
+
+    // calculate normals
+    this.normalData = Float32Array.from(
+      flatten(mesh.map(normal).map(vec => [vec.x, vec.y, vec.z, 1.0]))
+    );
+
     this.children = new Array<MobileElement>();
     this.parent = undefined;
     this.color = color;
@@ -146,6 +155,7 @@ export class MobileElement {
     gl.enableVertexAttribArray(vPosition);
 
     // buffer color data
+    /*
     const cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.colorData, gl.STATIC_DRAW);
@@ -153,6 +163,7 @@ export class MobileElement {
     const vColor = gl.getAttribLocation(program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
+   */
 
     // draw wireframe or solid object
     if (this.wireframe) {
@@ -171,12 +182,14 @@ export class MobileElement {
         Float32Array.from([0, Y_SEPARATION / 2, 0, 1, 0, 0, 0, 1]),
         gl.STATIC_DRAW
       );
+      /*
       gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
       gl.bufferData(
         gl.ARRAY_BUFFER,
         Float32Array.from([0, 0, 0, 1, 0, 0, 0, 1]),
         gl.STATIC_DRAW
       );
+     */
       gl.drawArrays(gl.LINES, 0, 2);
     }
 
@@ -202,13 +215,26 @@ export class MobileElement {
       Float32Array.from(flatten(strings.map(v => v.xyzw))),
       gl.STATIC_DRAW
     );
+    /*
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       Float32Array.from(flatten(strings.map(() => [0, 0, 0, 1]))),
       gl.STATIC_DRAW
     );
+   */
     gl.drawArrays(gl.LINES, 0, strings.length);
+
+    // buffer normals
+    /*
+    const vNormal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+    gl.bufferData(gl.ARRAY_BUFFER, this.normalData, gl.STATIC_DRAW);
+
+    const vNormalPosition = gl.getAttribLocation(program, "vNormal");
+    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormalPosition);
+   */
 
     this.children.forEach((child, index) => {
       // offset children so they all fit side by side

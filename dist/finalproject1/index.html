@@ -6,15 +6,27 @@
     <link rel="stylesheet" href="style.css" />
     <script id="vshader" type="x-shader/x-vertex">
       attribute vec4 vPosition;
-      attribute vec4 vColor;
+      attribute vec4 vNormal;
+      uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+      uniform vec4 lightPosition;
+      //attribute vec4 vColor;
       uniform mat4 modelMatrix;
       uniform mat4 projMatrix;
       varying vec4 fColor;
+      uniform float shininess;
       varying float depth;
       void main() {
+        vec3 pos = (modelMatrix * vPosition).xyz;
+        vec3 L = normalize(lightPosition.xyz - pos);
+        vec3 N = normalize(modelMatrix * vNormal).xyz;
+        vec3 V = normalize(-pos);
+        vec3 R = (2.0 * dot(L, N) * N) - L;
+        vec4 diffuse = diffuseProduct * dot(L, N);
+        vec4 ambient = ambientProduct;
+        vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
+        fColor = diffuse + specular + ambient;
+        fColor.a = 1.0;
         gl_Position = projMatrix * modelMatrix * vPosition;
-        gl_PointSize = 10.0;
-        fColor = vColor;
         float far_plane = 3.0;
         depth = ((gl_Position.z * 0.75) - 0.5) / far_plane;
       }
@@ -24,7 +36,6 @@
       varying vec4 fColor;
       varying float depth;
       void main() {
-        // TODO add checks for various option flags here
         gl_FragColor = fColor;
       }
     </script>

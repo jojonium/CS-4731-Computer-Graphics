@@ -13,7 +13,6 @@ export function flatten<T>(arr: T[][]): T[] {
  * Newell method
  */
 export const normal = (points: vec3[]): vec3 => {
-  if (points.length !== 3) console.log(points.length);
   const end = points.length - 1;
   let x = (points[end].y - points[0].y) * (points[end].z + points[0].z);
   let y = (points[end].z - points[0].z) * (points[end].x + points[0].x);
