@@ -2,7 +2,6 @@ import vec3 from "./lib/tsm/vec3";
 import { flatten, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec4 from "./lib/tsm/vec4";
-import { GLOBALS } from "./main";
 
 /** how far apart siblings are */
 const X_SEPARATION = 3;
@@ -14,16 +13,17 @@ const lightAmbient = new vec4([0.2, 0.2, 0.2, 1.0]);
 const lightDiffuse = new vec4([1.0, 1.0, 1.0, 1.0]);
 const lightSpecular = new vec4([1.0, 1.0, 1.0, 1.0]);
 
-const materialAmbient = new vec4([1.0, 0.9, 1.0, 1.0]);
-const materialDiffuse = new vec4([1.0, 0.8, 0.7, 1.0]);
+const materialAmbient = new vec4([1.0, 1.0, 1.0, 1.0]);
+const materialDiffuse = new vec4([1.0, 1.0, 1.0, 1.0]);
 const materialShininess = 20.0;
-const phi = 0.9;
 
 /**
  * This is one element of the mobile tree hierarchy. It may have children or a
  * parent
  */
 export class MobileElement {
+  /** the whole mesh to display */
+  private mesh: vec3[][];
   /** the triangles used to draw this object */
   private vertices: vec3[];
   /** polygons as an array ready to pass to webgl */
@@ -51,41 +51,31 @@ export class MobileElement {
   /** Rotation of next layer. 1 for ccw, -1 for cw, 0 for no rotation */
   public nextRotDir: -1 | 0 | 1;
   /** number of radians to rotate next layer per frame */
-  private nextRotSpeed: number;
+  public nextRotSpeed: number;
   /** stepped variable to keep track of next layer's rotation */
   private nextRotStep: number;
 
   /**
    * creates a new element with a model
    * @param mesh the polygons of the model
+   * @param color the r, g, b, a components of this mesh's color
    */
   public constructor(mesh: vec3[][], color: vec4) {
+    this.mesh = mesh;
     // convert mesh into Float32Array for webgl
     this.vertices = flatten(mesh);
     this.pointData = Float32Array.from(
       flatten(this.vertices.map(vec => [vec.x, vec.y, vec.z, 1.0]))
     );
 
-    // calculate normals
-    const normals: vec4[] = [];
-    for (const poly of mesh) {
-      const temp = normal(poly);
-      const n = new vec4([temp.x, temp.y, temp.z, 0.0]);
-      for (const vec of poly) {
-        if (GLOBALS.flat) normals.push(n);
-        else normals.push(new vec4([vec.x, vec.y, vec.z, 0.0]));
-      }
-    }
-    this.normalData = Float32Array.from(flatten(normals.map(a => a.xyzw)));
-
     this.children = new Array<MobileElement>();
     this.parent = undefined;
     this.color = color;
-    /*
-    this.colorData = Float32Array.from(
-      flatten(this.vertices.map(() => this.color.xyzw))
-    );
-    */
+
+    // calculate normals
+    this.normalData = new Float32Array(0);
+    this.calculateNormals(false);
+
     this.rotDir = 1;
     this.rotSpeed = Math.PI / 180;
     this.rotStep = 0;
@@ -102,6 +92,8 @@ export class MobileElement {
    */
   public addChild(child: MobileElement): void {
     if (this.children.length === 0) this.addLayer();
+    if (this.parent !== undefined)
+      this.nextRotDir = (-1 * this.parent.nextRotDir) as -1 | 0 | 1;
     this.children.push(child);
     child.parent = this;
     this.setChildrenWidth();
@@ -141,6 +133,7 @@ export class MobileElement {
    * @param gl the WebGL rendering context to draw to
    * @param program the WebGL program we're using
    * @param mvMatrix the model view matrix
+   * @param flat whether to use flat shading
    */
   public draw(
     gl: WebGLRenderingContext,
@@ -209,7 +202,6 @@ export class MobileElement {
       gl.getUniformLocation(program, "shininess"),
       materialShininess
     );
-    gl.uniform1f(gl.getUniformLocation(program, "phi"), phi);
 
     // draw wireframe or solid object
     if (this.wireframe) {
@@ -297,5 +289,41 @@ export class MobileElement {
       ])
     );
     return out;
+  }
+
+  /**
+   * recalculates normals based on shading type, then does the same for all
+   * children
+   * @param flat whether to do flat shading
+   */
+  public calculateNormals(flat: boolean): void {
+    const normals: vec4[] = [];
+    for (const poly of this.mesh) {
+      const temp = normal(poly);
+      const n = new vec4([temp.x, temp.y, temp.z, 0.0]);
+      for (const vec of poly) {
+        if (flat) normals.push(n);
+        else normals.push(new vec4([vec.x, vec.y, vec.z, 0.0]));
+      }
+    }
+    this.normalData = Float32Array.from(flatten(normals.map(a => a.xyzw)));
+    // repeat down the tree
+    this.children.map(child => child.calculateNormals(flat));
+  }
+
+  /**
+   * adds a new element somewhere below this one
+   * @param mesh mesh to add
+   * @param color color of mesh
+   */
+  public randomAdd(mesh: vec3[][], color: vec4): void {
+    const r = Math.random();
+    if (r < 1 / (this.children.length + 1)) {
+      this.addChild(new MobileElement(mesh, color));
+      return;
+    }
+    this.children[Math.floor(r * this.children.length)].addChild(
+      new MobileElement(mesh, color)
+    );
   }
 }

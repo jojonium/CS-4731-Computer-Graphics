@@ -18,7 +18,7 @@ export const render = (
 ): void => {
   // set view port and clear canvas
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  gl.clearColor(0.9, 0.9, 0.9, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // set perspective transform
