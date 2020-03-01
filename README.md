@@ -47,3 +47,12 @@ polyline.
 In addition, the user can select the color to draw the polylines by pressing
 the "c" key or using a color picker input on the page. Users can also draw
 additional polylines on figures from uploaded files.
+
+## Project 2
+
+Project 2 parses a user-uploaded (PLY
+file)[https://en.wikipedia.org/wiki/PLY_(file_format)] and displays it as a
+wireframe mesh in a WebGL canvas. The mesh is scaled and centered so it fits
+nicely in the viewport, and the user can rotate and translate it on any axis
+using the controls on the page. The mesh can also be made to "pulse" by
+translating each polygon along its normal vector.
