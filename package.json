@@ -8,9 +8,9 @@
     "lint": "eslint 'src/**/*' --ext .js,.ts --quiet --fix",
     "prebuild": "npm run lint",
     "compile": "tsc",
-    "bundle": "browserify -vd build/finalproject1/main.js -o dist/finalproject1/bundle.js && browserify -vd build/finalproject1/main.js -o dist/finalproject1/bundle.js",
+    "bundle": "browserify -vd build/finalproject2/main.js -o dist/finalproject2/bundle.js && browserify -vd build/finalproject2/main.js -o dist/finalproject2/bundle.js",
     "build": "npm run compile && npm run bundle",
-    "watch": "watchify -vd build/finalproject1/main.js -o dist/finalproject1/bundle.js & tsc --watch"
+    "watch": "watchify -vd build/finalproject2/main.js -o dist/finalproject2/bundle.js & tsc --watch"
   },
   "repository": {
     "type": "git",
