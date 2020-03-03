@@ -50,9 +50,24 @@ additional polylines on figures from uploaded files.
 
 ## Project 2
 
-Project 2 parses a user-uploaded (PLY
-file)[https://en.wikipedia.org/wiki/PLY_(file_format)] and displays it as a
+Project 2 parses a user-uploaded [PLY
+file](https://en.wikipedia.org/wiki/PLY_(file_format)) and displays it as a
 wireframe mesh in a WebGL canvas. The mesh is scaled and centered so it fits
 nicely in the viewport, and the user can rotate and translate it on any axis
 using the controls on the page. The mesh can also be made to "pulse" by
 translating each polygon along its normal vector.
+
+## Final Project, Part 1
+
+Part 1 of the Final Project implements a heirarchical model of 3D meshes. It
+displays a rotating mobile of 3D objects. Each object can have any number of
+siblings and any number of children objects. The layers of the mobile alternate
+the direction they are spinning, and each object also spins on its own axis.
+
+You can upload a PLY file to automatically add it to a rnadom location on the
+mobile. These objects are scaled and translated to fit in with the size of the
+other objects in the scene.
+
+The scene also implements lighting. There is a spotlight, the angle of which
+can be adjusted by pressing "P" and "p". You can also switch between smooth
+lighting (by pressing "M") and Gouraud lighting (by pressing "m")
