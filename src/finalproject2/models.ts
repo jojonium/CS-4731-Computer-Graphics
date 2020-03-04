@@ -65,7 +65,7 @@ export const getSphere = (): vec3[][] => {
   const vb = new vec3([0.0, 0.942809, 0.333333]);
   const vc = new vec3([-0.816497, -0.471405, 0.333333]);
   const vd = new vec3([0.816497, -0.471405, 0.333333]);
-  const tet = tetrahedron(va, vb, vc, vd, 4);
+  const tet = tetrahedron(vc, vb, va, vd, 4);
   return tet.map(tri =>
     tri.map(vec => new vec3([vec.x * 0.5, vec.y * 0.5, vec.z * 0.5]))
   );
