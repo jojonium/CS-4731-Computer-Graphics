@@ -138,7 +138,6 @@ export class MobileElement {
    * @param gl the WebGL rendering context to draw to
    * @param program the WebGL program we're using
    * @param mvMatrix the model view matrix
-   * @param flat whether to use flat shading
    */
   public draw(
     gl: WebGLRenderingContext,

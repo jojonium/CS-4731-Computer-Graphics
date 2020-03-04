@@ -2,6 +2,7 @@ import mat4 from "./lib/tsm/mat4";
 import vec3 from "./lib/tsm/vec3";
 import { GLOBALS } from "./main";
 import { MobileElement } from "./MobileElement";
+import { drawFloor } from "./environment";
 
 /**
  * @param canvas the canvas to draw on
@@ -37,12 +38,16 @@ export const render = (
   const upVec = new vec3([0, 1, 0]);
   const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
+  // draw floor
+  drawFloor(gl, program, modelView);
+
   // scale and translate to fit the mobile
   const s = 1.5 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
   modelView
     .scale(new vec3([s, s, s]))
     .translate(new vec3([0, mobile.getTotalHeight() / 2, 0]));
 
+  // draw mobile
   mobile.draw(gl, program, modelView);
 
   GLOBALS.callbackID = requestAnimationFrame(() => {
