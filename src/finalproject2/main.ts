@@ -2,14 +2,14 @@
  * Joseph Petitti - CS 4731 Computer Graphics Final Project, Part 2
  */
 
-import { createCanvas } from "./helpers";
+import { createFileInput, getInput, parseFileText } from "./file";
+import { createCanvas, createTexture } from "./helpers";
 import { initShaders } from "./lib/initShaders";
+import vec4 from "./lib/tsm/vec4";
 import { setupWebGL } from "./lib/webgl-utils";
-import { render } from "./render";
-import { parseFileText, createFileInput, getInput } from "./file";
 import { MobileElement } from "./MobileElement";
 import { getCube, getSphere } from "./models";
-import vec4 from "./lib/tsm/vec4";
+import { render } from "./render";
 
 export type Extents = {
   minX: number;
@@ -98,6 +98,15 @@ function main(): void {
   gl.useProgram(program);
   gl.cullFace(gl.BACK);
   gl.enable(gl.DEPTH_TEST);
+
+  // load textures
+  const grassImg = document.getElementById("grass") as HTMLImageElement;
+  if (grassImg === null) throw new Error("couldn't get grass image");
+  const stonesImg = document.getElementById("stones") as HTMLImageElement;
+  if (stonesImg === null) throw new Error("couldn't get stone image");
+
+  createTexture(gl, program, 0, grassImg);
+  createTexture(gl, program, 1, stonesImg);
 
   // angle of the spotlight
   let phi = 0.9;
