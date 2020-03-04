@@ -345,6 +345,6 @@ export class MobileElement {
       this.addChild(me);
       return;
     }
-    this.children[Math.floor(r * this.children.length)].addChild(me);
+    this.children[Math.floor(r * this.children.length)].randomAdd(me);
   }
 }
