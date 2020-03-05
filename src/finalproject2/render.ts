@@ -48,8 +48,8 @@ export const render = (
   // draw floor
   const floorView = modelView
     .copy()
-    .translate(new vec3([0, -mobile.getTotalHeight() * 0.6, 0]))
-    .scale(new vec3([5, 5, 5]));
+    .translate(new vec3([0, -mobile.getTotalHeight() * 0.8, 0]))
+    .scale(new vec3([2 / s, 2 / s, 2 / s]));
   gl.enableVertexAttribArray(gl.getAttribLocation(program, "vTexCoord"));
   drawFloor(gl, textureProgram, floorView);
 

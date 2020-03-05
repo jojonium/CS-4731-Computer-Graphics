@@ -3,19 +3,19 @@ import mat4 from "./lib/tsm/mat4";
 import { quad } from "./models";
 
 const f = quad(3, 0, 4, 7);
-const floor = [
+const floorTriangles = [
   [f[0], f[1], f[2]],
   [f[3], f[4], f[5]]
 ];
 
-const pointsData = Float32Array.from(
-  flatten(flatten(floor).map(vec => [vec.x, vec.y, vec.z, 1]))
+const floorPointsData = Float32Array.from(
+  flatten(flatten(floorTriangles).map(vec => [vec.x, vec.y, vec.z, 1]))
 );
 
-const normalsData = Float32Array.from(
+const floorNormalsData = Float32Array.from(
   flatten(
     flatten(
-      floor.map(poly => {
+      floorTriangles.map(poly => {
         const n = normal(poly).scale(-1);
         return poly.map(() => [n.x, n.y, n.z, 0]);
       })
@@ -23,7 +23,7 @@ const normalsData = Float32Array.from(
   )
 );
 
-const texCoordsData = Float32Array.from(
+const floorTexCoordsData = Float32Array.from(
   flatten([
     [0, 0],
     [0, 1],
@@ -59,14 +59,15 @@ export const drawFloor = (
   // vertices
   const vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, pointsData, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, floorPointsData, gl.STATIC_DRAW);
   const vPosition = gl.getAttribLocation(program, "vPosition");
   gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vPosition);
 
+  // normals
   const vNormal = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-  gl.bufferData(gl.ARRAY_BUFFER, normalsData, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, floorNormalsData, gl.STATIC_DRAW);
   const vNormalPosition = gl.getAttribLocation(program, "vNormal");
   gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vNormalPosition);
@@ -74,10 +75,11 @@ export const drawFloor = (
   // texture coordinates
   const tBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, texCoordsData, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, floorTexCoordsData, gl.STATIC_DRAW);
   const tvTexCoord = gl.getAttribLocation(program, "vTexCoord");
   gl.vertexAttribPointer(tvTexCoord, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(tvTexCoord);
 
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.drawArrays(gl.TRIANGLES, 0, f.length);
 };
+
