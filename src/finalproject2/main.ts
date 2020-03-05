@@ -10,6 +10,7 @@ import { setupWebGL } from "./lib/webgl-utils";
 import { MobileElement } from "./MobileElement";
 import { getCube, getSphere } from "./models";
 import { render } from "./render";
+import vec3 from "./lib/tsm/vec3";
 
 export type Extents = {
   minX: number;
@@ -49,7 +50,8 @@ function main(): void {
   // create file input
   const fileInput = createFileInput();
 
-  const randMesh = () => (Math.random() < 0.5 ? getCube() : getSphere());
+  const randMesh = (): vec3[][] =>
+    Math.random() < 0.5 ? getCube() : getSphere();
   // create the mobile
   const mobile = new MobileElement(randMesh(), new vec4([0.0, 0.0, 1.0, 1]));
   mobile.nextRotSpeed = Math.PI / 360;
@@ -95,6 +97,7 @@ function main(): void {
 
   // initialize shaders
   const program = initShaders(gl, "vshader", "fshader");
+  const textureProgram = initShaders(gl, "t_vshader", "t_fshader");
   gl.useProgram(program);
   gl.cullFace(gl.BACK);
   gl.enable(gl.DEPTH_TEST);
@@ -132,7 +135,7 @@ function main(): void {
       cancelAnimationFrame(GLOBALS.callbackID);
 
     // start rendering
-    render(canvas, gl, program, mobile);
+    render(canvas, gl, program, textureProgram, mobile);
   };
 
   // handle keyboard input

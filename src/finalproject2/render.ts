@@ -8,13 +8,14 @@ import { drawFloor } from "./environment";
  * @param canvas the canvas to draw on
  * @param gl the WebGL rendering context of the canvas
  * @param program the WebGL program we're using
- * @param polygons the list of polygons, represented as arrays of vec3s
- * @param extents the max and min dimensions of the model
+ * @param program the WebGL program for drawing textured objects
+ * @param mobile the list of polygons, represented as arrays of vec3s
  */
 export const render = (
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext,
   program: WebGLProgram,
+  textureProgram: WebGLProgram,
   mobile: MobileElement
 ): void => {
   // set view port and clear canvas
@@ -39,7 +40,7 @@ export const render = (
   const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
   // draw floor
-  drawFloor(gl, program, modelView);
+  drawFloor(gl, textureProgram, modelView);
 
   // scale and translate to fit the mobile
   const s = 1.5 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
@@ -51,6 +52,6 @@ export const render = (
   mobile.draw(gl, program, modelView);
 
   GLOBALS.callbackID = requestAnimationFrame(() => {
-    render(canvas, gl, program, mobile);
+    render(canvas, gl, program, textureProgram, mobile);
   });
 };

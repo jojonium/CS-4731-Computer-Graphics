@@ -55,6 +55,28 @@
         gl_FragColor = fColor;
       }
     </script>
+    <script id="t_vshader" type="x-shader/x-vertex">
+      attribute vec4 t_vPosition;
+      uniform mat4 t_modelMatrix;
+      uniform mat4 t_projMatrix;
+      attribute vec2 t_vTexCoord;
+      varying vec4 t_fColor;
+      varying vec2 t_fTexCoord;
+      void main() {
+        gl_Position = t_projMatrix * t_modelMatrix * t_vPosition;
+        t_fTexCoord = t_vTexCoord;
+        //gl_Position = t_vPosition;
+      }
+    </script>
+    <script id="t_fshader" type="x-shader/x-fragment">
+      precision mediump float;
+      varying vec4 t_fColor;
+      varying vec2 t_fTexCoord;
+      uniform sampler2D texture;
+      void main() {
+        gl_FragColor = texture2D(texture, t_fTexCoord);
+      }
+    </script>
   </head>
 
   <body>
