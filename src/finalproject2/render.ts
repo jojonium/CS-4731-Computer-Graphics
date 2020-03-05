@@ -39,14 +39,23 @@ export const render = (
   const upVec = new vec3([0, 1, 0]);
   const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
-  // draw floor
-  drawFloor(gl, textureProgram, modelView);
-
   // scale and translate to fit the mobile
   const s = 1.5 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
   modelView
     .scale(new vec3([s, s, s]))
     .translate(new vec3([0, mobile.getTotalHeight() / 2, 0]));
+
+  // draw floor
+  const floorView = modelView
+    .copy()
+    .translate(new vec3([0, -mobile.getTotalHeight() * 0.6, 0]))
+    .scale(new vec3([5, 5, 5]));
+  gl.enableVertexAttribArray(gl.getAttribLocation(program, "vTexCoord"));
+  drawFloor(gl, textureProgram, floorView);
+
+  // disable texture mode
+  gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), -1.0);
+  gl.disableVertexAttribArray(gl.getAttribLocation(program, "vTexCoord"));
 
   // draw mobile
   mobile.draw(gl, program, modelView);

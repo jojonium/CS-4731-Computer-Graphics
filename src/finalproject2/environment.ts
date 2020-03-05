@@ -1,59 +1,83 @@
-import { flatten } from "./helpers";
+import { createTexture, flatten, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
+import { quad } from "./models";
+
+const f = quad(3, 0, 4, 7);
+const floor = [
+  [f[0], f[1], f[2]],
+  [f[3], f[4], f[5]]
+];
+
+const pointsData = Float32Array.from(
+  flatten(flatten(floor).map(vec => [vec.x, vec.y, vec.z, 1]))
+);
+
+const normalsData = Float32Array.from(
+  flatten(
+    flatten(
+      floor.map(poly => {
+        const n = normal(poly).scale(-1);
+        return poly.map(() => [n.x, n.y, n.z, 0]);
+      })
+    )
+  )
+);
+
+const texCoordsData = Float32Array.from(
+  flatten([
+    [0, 0],
+    [0, 1],
+    [1, 1],
+    [0, 0],
+    [1, 1],
+    [1, 0]
+  ])
+);
 
 /**
  * draws the floor of the world
  * @param gl the WebGL rendering context to draw to
- * @param textureProgram the WebGL program we're using to draw textures
+ * @param program the WebGL program we're using to draw textures
  * @param mvMatrix the model view matrix
  */
 export const drawFloor = (
   gl: WebGLRenderingContext,
-  textureProgram: WebGLProgram,
+  program: WebGLProgram,
   mvMatrix: mat4
 ): void => {
-  const modelMatrixLoc = gl.getUniformLocation(textureProgram, "modelMatrix");
+  const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
   gl.uniformMatrix4fv(modelMatrixLoc, false, Float32Array.from(mvMatrix.all()));
 
-  // buffer floor triangles
-  const points = Float32Array.from(
-    flatten([
-      // left
-      [-10, -10, 10, 1],
-      [10, -10, 10, 1],
-      [-10, -10, 10, 1],
-      // right
-      [10, -10, 10, 1],
-      [10, -10, -10, 1],
-      [-10, -10, 10, 1]
-    ])
-  );
+  // use grass texture
+  const grassImg = document.getElementById("grass") as HTMLImageElement;
+  if (grassImg === null) throw new Error("couldn't get grass image");
+  createTexture(gl, program, 0, grassImg);
+  gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 0.0);
 
-  const texCoords = Float32Array.from(
-    flatten([
-      [0, 0],
-      [0, 1],
-      [1, 1],
-      [1, 0]
-    ])
-  );
+  // colors
 
-  const tvBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, tvBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
-  const tvPosition = gl.getAttribLocation(textureProgram, "t_vPosition");
-  gl.vertexAttribPointer(tvPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(tvPosition);
+  // vertices
+  const vBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, pointsData, gl.STATIC_DRAW);
+  const vPosition = gl.getAttribLocation(program, "vPosition");
+  gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vPosition);
 
-  const ttBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, ttBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
-  const tvTexCoord = gl.getAttribLocation(textureProgram, "t_vTexCoord");
+  const vNormal = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+  gl.bufferData(gl.ARRAY_BUFFER, normalsData, gl.STATIC_DRAW);
+  const vNormalPosition = gl.getAttribLocation(program, "vNormal");
+  gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vNormalPosition);
+
+  // texture coordinates
+  const tBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, texCoordsData, gl.STATIC_DRAW);
+  const tvTexCoord = gl.getAttribLocation(program, "vTexCoord");
   gl.vertexAttribPointer(tvTexCoord, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(tvTexCoord);
 
-  gl.drawArrays(gl.TRIANGLES, 0, 2);
-
-  gl.disableVertexAttribArray(tvPosition);
-  gl.disableVertexAttribArray(tvTexCoord);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
 };

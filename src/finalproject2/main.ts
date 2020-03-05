@@ -3,7 +3,7 @@
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
-import { createCanvas, createTexture } from "./helpers";
+import { createCanvas, placeholderTexture } from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import vec4 from "./lib/tsm/vec4";
 import { setupWebGL } from "./lib/webgl-utils";
@@ -97,19 +97,12 @@ function main(): void {
 
   // initialize shaders
   const program = initShaders(gl, "vshader", "fshader");
-  const textureProgram = initShaders(gl, "t_vshader", "t_fshader");
   gl.useProgram(program);
   gl.cullFace(gl.BACK);
   gl.enable(gl.DEPTH_TEST);
 
-  // load textures
-  const grassImg = document.getElementById("grass") as HTMLImageElement;
-  if (grassImg === null) throw new Error("couldn't get grass image");
-  const stonesImg = document.getElementById("stones") as HTMLImageElement;
-  if (stonesImg === null) throw new Error("couldn't get stone image");
-
-  createTexture(gl, program, 0, grassImg);
-  createTexture(gl, program, 1, stonesImg);
+  // set up placeholder textures while other tetxures load
+  placeholderTexture(gl);
 
   // angle of the spotlight
   let phi = 0.9;
@@ -135,7 +128,7 @@ function main(): void {
       cancelAnimationFrame(GLOBALS.callbackID);
 
     // start rendering
-    render(canvas, gl, program, textureProgram, mobile);
+    render(canvas, gl, program, program, mobile);
   };
 
   // handle keyboard input

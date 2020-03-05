@@ -2,7 +2,7 @@ import vec3 from "./lib/tsm/vec3";
 import { mix, flatten } from "./helpers";
 
 /** helper function for generating vertices of a cube */
-const quad = (a: number, b: number, c: number, d: number): vec3[] => {
+export const quad = (a: number, b: number, c: number, d: number): vec3[] => {
   const vertices = [
     new vec3([-0.5, -0.5, 0.5]),
     new vec3([-0.5, 0.5, 0.5]),

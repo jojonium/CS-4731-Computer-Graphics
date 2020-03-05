@@ -5,9 +5,13 @@
     <title>Joseph Petitti CS 4731 Final Project, Part 2</title>
     <link rel="stylesheet" href="style.css" />
     <script id="vshader" type="x-shader/x-vertex">
+      precision mediump float;
       attribute vec4 vPosition;
       attribute vec4 vNormal;
       varying vec4 fColor;
+      attribute vec2 vTexCoord;
+      varying vec2 fTexCoord;
+      uniform sampler2D texture;
       uniform vec4 ambientProduct, diffuseProduct, specularProduct;
       uniform mat4 projMatrix;
       uniform mat4 modelMatrix;
@@ -15,6 +19,8 @@
       uniform float shininess;
       uniform float phi;
       varying float depth;
+      uniform float vTextureSelector;
+      varying float fTextureSelector;
       void main() {
         // vertex position in eye coords
         vec3 pos = (modelMatrix * vPosition).xyz;
@@ -42,6 +48,8 @@
 
         fColor = diffuse + specular + ambient;
         fColor.a = 1.0;
+        fTexCoord = vTexCoord;
+        fTextureSelector = vTextureSelector;
 
         float far_plane = 3.0;
         depth = ((gl_Position.z * 0.75) - 0.5) / far_plane;
@@ -50,31 +58,19 @@
     <script id="fshader" type="x-shader/x-fragment">
       precision mediump float;
       varying vec4 fColor;
+      varying vec2 fTexCoord;
       varying float depth;
+      varying float fTextureSelector;
+      uniform sampler2D texture0;
+      uniform sampler2D texture1;
       void main() {
-        gl_FragColor = fColor;
-      }
-    </script>
-    <script id="t_vshader" type="x-shader/x-vertex">
-      attribute vec4 t_vPosition;
-      uniform mat4 t_modelMatrix;
-      uniform mat4 t_projMatrix;
-      attribute vec2 t_vTexCoord;
-      varying vec4 t_fColor;
-      varying vec2 t_fTexCoord;
-      void main() {
-        gl_Position = t_projMatrix * t_modelMatrix * t_vPosition;
-        t_fTexCoord = t_vTexCoord;
-        //gl_Position = t_vPosition;
-      }
-    </script>
-    <script id="t_fshader" type="x-shader/x-fragment">
-      precision mediump float;
-      varying vec4 t_fColor;
-      varying vec2 t_fTexCoord;
-      uniform sampler2D texture;
-      void main() {
-        gl_FragColor = texture2D(texture, t_fTexCoord);
+        if (fTextureSelector == 0.0) {
+          gl_FragColor = texture2D(texture0, fTexCoord);
+        } else if (fTextureSelector == 1.0) {
+          gl_FragColor = texture2D(texture1, fTexCoord);
+        } else {
+          gl_FragColor = fColor;
+        }
       }
     </script>
   </head>
