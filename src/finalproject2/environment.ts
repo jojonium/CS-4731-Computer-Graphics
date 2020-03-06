@@ -1,6 +1,7 @@
 import { flatten } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import { quad } from "./models";
+import { GLOBALS } from "./main";
 
 const f = quad(3, 0, 4, 7);
 const floorTriangles = [
@@ -64,8 +65,26 @@ export const drawEnvironment = (
 
   // do floor first
 
-  // use grass texture
-  gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 0.0);
+  if (GLOBALS.texturesOn) {
+    // use grass texture
+    gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 0.0);
+  } else {
+    gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), -1.0);
+    // if textures are off make the floor grey
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "diffuseProduct"),
+      Float32Array.from([0.7, 0.7, 0.7, 1.0])
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "specularProduct"),
+      Float32Array.from([0.7, 0.7, 0.7, 1.0])
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "ambientProduct"),
+      Float32Array.from([0.7, 0.7, 0.7, 1.0])
+    );
+    gl.uniform1f(gl.getUniformLocation(program, "shininess"), 20);
+  }
 
   // buffer vertices
   const vBuffer = gl.createBuffer();
@@ -87,8 +106,26 @@ export const drawEnvironment = (
 
   // now do walls
 
-  // use stone texture
-  gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 1.0);
+  if (GLOBALS.texturesOn) {
+    // use stone texture
+    gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 1.0);
+  } else {
+    gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), -1.0);
+    // if textures are off make the walls blue
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "diffuseProduct"),
+      Float32Array.from([0.2, 0.2, 0.8, 1.0])
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "specularProduct"),
+      Float32Array.from([0.2, 0.2, 0.8, 1.0])
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(program, "ambientProduct"),
+      Float32Array.from([0.2, 0.2, 0.8, 1.0])
+    );
+    gl.uniform1f(gl.getUniformLocation(program, "shininess"), 20);
+  }
 
   // buffer vertices
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);

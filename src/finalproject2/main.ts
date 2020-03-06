@@ -50,10 +50,8 @@ export const GLOBALS = {
   callbackID: undefined as number | undefined,
   /** Whether or not to draw shadows */
   shadowsOn: false,
-  /** whether objects should reflect the environment */
-  reflectOn: false,
-  /** whether objects should refract the environment */
-  refractOn: false
+  /** whether to draw the walls and floor with textures */
+  texturesOn: true
 };
 
 function main(): void {
@@ -198,6 +196,9 @@ function main(): void {
       reflective = false;
       refractive = !refractive;
       setRFunc(gl, program, reflective, refractive);
+    }
+    if (key === "b") {
+      GLOBALS.texturesOn = !GLOBALS.texturesOn;
     }
   });
 
