@@ -214,9 +214,30 @@ export class MobileElement {
     program: WebGLProgram,
     mvMatrix: mat4
   ): void {
-    const shadowView = mvMatrix
-      .copy()
-      .translate(new vec3([0, 0, -2]))
+    const shadowView = mvMatrix.copy();
+    if (this.parent !== undefined) {
+      const index = this.parent.children.indexOf(this);
+      const n = this.parent.childrenWidth;
+      const c = this.parent.children.length / n;
+      const xPos = n < 2 ? 0 : X_SEPARATION * (index / c - (n - 1) / 2);
+      shadowView
+        // move back to origin
+        .translate(new vec3([-xPos, 0, 0]))
+        // undo arm rotation
+        .rotate(
+          -this.parent.nextRotDir *
+            this.parent.nextRotSpeed *
+            this.parent.nextRotStep,
+          new vec3([0, 1, 0])
+        );
+      if (shadowView === null) throw new Error("failed to rotate");
+
+      // translate back to correct location
+      shadowView.translate(new vec3([xPos, 0, 0]));
+    }
+
+    shadowView
+      .translate(new vec3([0, 0, -8]))
       .translate(new vec3([lightPosition.x, lightPosition.y, lightPosition.z]))
       .multiply(
         new mat4(
