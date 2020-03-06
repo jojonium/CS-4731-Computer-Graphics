@@ -100,3 +100,89 @@ export const drawEnvironment = (
 
   gl.drawArrays(gl.TRIANGLES, 0, bw.length + lw.length);
 };
+
+/**
+ * sets up an environment map based on six images
+ * @param gl the WebGL rendering context to draw to
+ * @param program the WebGL program we're using to draw textures
+ * @param images the six images in the order [back, right, bottom, top, front,
+ * left]
+ */
+export const configureEnvironmentMap = (
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  images: [
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement
+  ]
+): void => {
+  const cubeMap = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE2);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMap);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+  // back
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[0]
+  );
+  // right
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[1]
+  );
+  // bottom
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[2]
+  );
+  // top
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[3]
+  );
+  // front
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[4]
+  );
+  // left
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[5]
+  );
+
+  gl.uniform1i(gl.getUniformLocation(program, "texMap"), 2);
+};

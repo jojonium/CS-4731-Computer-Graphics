@@ -159,3 +159,26 @@ export const placeholderTexture = (gl: WebGLRenderingContext): void => {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 };
+
+/**
+ * create a simple placeholder texture while waiting for other textures to load
+ * @param gl the rendering context to use
+ * @param program the webgl program
+ * @param reflective whether objects should reflect
+ * @param refractive whether objects should refract
+ */
+export const setRFunc = (
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  reflective: boolean,
+  refractive: boolean
+): void => {
+  gl.uniform1i(
+    gl.getUniformLocation(program, "refractive"),
+    refractive ? 1 : 0
+  );
+  gl.uniform1i(
+    gl.getUniformLocation(program, "reflective"),
+    reflective ? 1 : 0
+  );
+};

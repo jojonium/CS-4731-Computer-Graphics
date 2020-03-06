@@ -3,7 +3,12 @@
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
-import { createCanvas, placeholderTexture, createTexture } from "./helpers";
+import {
+  createCanvas,
+  placeholderTexture,
+  createTexture,
+  setRFunc
+} from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import vec4 from "./lib/tsm/vec4";
 import { setupWebGL } from "./lib/webgl-utils";
@@ -11,6 +16,7 @@ import { MobileElement } from "./MobileElement";
 import { getCube, getSphere } from "./models";
 import { render } from "./render";
 import vec3 from "./lib/tsm/vec3";
+import { configureEnvironmentMap } from "./environment";
 
 export type Extents = {
   minX: number;
@@ -43,7 +49,11 @@ export const GLOBALS = {
    */
   callbackID: undefined as number | undefined,
   /** Whether or not to draw shadows */
-  shadowsOn: true
+  shadowsOn: false,
+  /** whether objects should reflect the environment */
+  reflectOn: false,
+  /** whether objects should refract the environment */
+  refractOn: false
 };
 
 function main(): void {
@@ -55,11 +65,10 @@ function main(): void {
   const randMesh = (): vec3[][] =>
     Math.random() < 0.5 ? getCube() : getSphere();
   // create the mobile
-  const mobile = new MobileElement(randMesh(), new vec4([0.0, 0.0, 1.0, 1]));
+  const mobile = new MobileElement(randMesh(), new vec4([0.3, 0.4, 0.8, 1]));
   mobile.nextRotSpeed = Math.PI / 360;
   mobile.addChild(new MobileElement(randMesh(), new vec4([1, 0.0, 0.0, 1])));
   mobile.addChild(new MobileElement(randMesh(), new vec4([0.98, 1, 0.07, 1])));
-  /*
   mobile.randomAdd(
     new MobileElement(randMesh(), new vec4([0.25, 0.92, 0.83, 1]))
   );
@@ -86,7 +95,6 @@ function main(): void {
   );
   mobile.randomAdd(new MobileElement(randMesh(), new vec4([1.0, 0, 0, 1])));
   mobile.randomAdd(new MobileElement(randMesh(), new vec4([0, 1.0, 0, 1])));
-  */
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -101,6 +109,12 @@ function main(): void {
   gl.cullFace(gl.BACK);
   gl.enable(gl.DEPTH_TEST);
 
+  // set initial attributes
+  let reflective = false;
+  let refractive = false;
+  gl.uniform1i(gl.getUniformLocation(program, "reflective"), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "refractive"), 0);
+
   // set up placeholder texture and load other textures
   placeholderTexture(gl);
   const grassImg = document.getElementById("grass") as HTMLImageElement;
@@ -110,8 +124,28 @@ function main(): void {
   if (grassImg === null) throw new Error("couldn't get stones image");
   createTexture(gl, program, 1, stonesImg);
 
+  // set up environment map
+  const envMapImgs = [
+    document.getElementById("nvnegz"),
+    document.getElementById("nvposx"),
+    document.getElementById("nvnegy"),
+    document.getElementById("nvposy"),
+    document.getElementById("nvposz"),
+    document.getElementById("nvnegx")
+  ] as [
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement,
+    HTMLImageElement
+  ];
+  if (!envMapImgs.every(elt => elt !== null))
+    throw new Error("couldn't get env map image");
+  configureEnvironmentMap(gl, program, envMapImgs);
+
   // angle of the spotlight
-  let phi = 0.9;
+  let phi = 0.7;
 
   // handle a file being uploaded
   fileInput.addEventListener("change", () => {
@@ -148,9 +182,22 @@ function main(): void {
     if (key === "m") {
       if (ev.shiftKey) mobile.calculateNormals(true);
       else mobile.calculateNormals(false);
+      reflective = false;
+      refractive = false;
+      setRFunc(gl, program, reflective, refractive);
     }
     if (key === "a") {
       GLOBALS.shadowsOn = !GLOBALS.shadowsOn;
+    }
+    if (key === "c") {
+      reflective = !reflective;
+      refractive = false;
+      setRFunc(gl, program, reflective, refractive);
+    }
+    if (key === "d") {
+      reflective = false;
+      refractive = !refractive;
+      setRFunc(gl, program, reflective, refractive);
     }
   });
 

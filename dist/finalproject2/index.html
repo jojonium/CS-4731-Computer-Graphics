@@ -21,6 +21,10 @@
       varying float depth;
       uniform float vTextureSelector;
       varying float fTextureSelector;
+      varying vec3 R;
+      uniform bool reflective;
+      uniform bool refractive;
+      varying float fUseEnv;
       void main() {
         // vertex position in eye coords
         vec3 pos = (modelMatrix * vPosition).xyz;
@@ -29,6 +33,13 @@
         vec3 E = normalize(-pos);
         // transform vertex normal to eye coords
         vec3 N = normalize(modelMatrix * vNormal).xyz;
+        R = vec3(1, 1, 1);
+        if (reflective) {
+          R = reflect(pos, N);
+        }
+        if (refractive) {
+          R = refract(pos, N, 0.5);
+        }
         // illumination
         float Kd = dot(L, N);
         vec3 H = (2.0 * Kd * N) - L;
@@ -53,6 +64,11 @@
 
         float far_plane = 3.0;
         depth = ((gl_Position.z * 0.75) - 0.5) / far_plane;
+        if (reflective || refractive) {
+          fUseEnv = 1.0;
+        } else {
+          fUseEnv = 0.0;
+        }
       }
     </script>
     <script id="fshader" type="x-shader/x-fragment">
@@ -63,13 +79,21 @@
       varying float fTextureSelector;
       uniform sampler2D texture0;
       uniform sampler2D texture1;
+      uniform samplerCube texMap;
+      varying vec3 R;
+      varying float fUseEnv;
       void main() {
         if (fTextureSelector == 0.0) {
           gl_FragColor = texture2D(texture0, fTexCoord);
         } else if (fTextureSelector == 1.0) {
           gl_FragColor = texture2D(texture1, fTexCoord);
         } else {
-          gl_FragColor = fColor;
+          if (fUseEnv == 1.0) {
+            vec4 texColor = textureCube(texMap, R);
+            gl_FragColor = fColor * texColor;
+          } else {
+            gl_FragColor = fColor;
+          }
         }
       }
     </script>
@@ -85,6 +109,8 @@
 
       <ul>
         <li>Press <b>a</b> to toggle shadows on or off</li>
+        <li>Press <b>c</b> to make the model reflective</li>
+        <li>Press <b>d</b> to make the model refractive</li>
         <li>Press <b>p</b> to increase the spotlight cutoff angle</li>
         <li>Press <b>shift+p</b> to decrease the spotlight cutoff angle</li>
         <li>Press <b>m</b> to use Gouraud shading</li>
@@ -102,6 +128,36 @@
         id="grass"
         crossorigin=""
         src="https://web.cs.wpi.edu/~jmcuneo/grass.bmp"
+      />
+      <img
+        id="nvnegx"
+        crossorigin=""
+        src="https://web.cs.wpi.edu/~jmcuneo/env_map_sides/nvnegx.bmp"
+      />
+      <img
+        id="nvnegy"
+        crossorigin=""
+        src="https://web.cs.wpi.edu/~jmcuneo/env_map_sides/nvnegy.bmp"
+      />
+      <img
+        id="nvnegz"
+        crossorigin=""
+        src="https://web.cs.wpi.edu/~jmcuneo/env_map_sides/nvnegz.bmp"
+      />
+      <img
+        id="nvposx"
+        crossorigin=""
+        src="https://web.cs.wpi.edu/~jmcuneo/env_map_sides/nvposx.bmp"
+      />
+      <img
+        id="nvposy"
+        crossorigin=""
+        src="https://web.cs.wpi.edu/~jmcuneo/env_map_sides/nvposy.bmp"
+      />
+      <img
+        id="nvposz"
+        crossorigin=""
+        src="https://web.cs.wpi.edu/~jmcuneo/env_map_sides/nvposz.bmp"
       />
     </div>
     <script src="bundle.js"></script>
