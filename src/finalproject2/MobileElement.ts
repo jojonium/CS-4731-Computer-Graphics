@@ -2,14 +2,14 @@ import vec3 from "./lib/tsm/vec3";
 import { flatten, normal } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import vec4 from "./lib/tsm/vec4";
-import { defaultExtents, Extents } from "./main";
+import { defaultExtents, Extents, GLOBALS } from "./main";
 
 /** how far apart siblings are */
 const X_SEPARATION = 3;
 /** how far apart parents and children are */
 const Y_SEPARATION = 1.5;
 
-const lightPosition = new vec4([1.0, 1.0, -1.0, 0.0]);
+const lightPosition = new vec4([0.0, 0.0, 1.0, 1.0]);
 const lightAmbient = new vec4([0.2, 0.2, 0.2, 1.0]);
 const lightDiffuse = new vec4([1.0, 1.0, 1.0, 1.0]);
 const lightSpecular = new vec4([1.0, 1.0, 1.0, 1.0]);
@@ -134,17 +134,32 @@ export class MobileElement {
   }
 
   /**
-   * recursively draws this element and each of its children on the canvas
-   * @param gl the WebGL rendering context to draw to
+   * draws just the mesh of this element, optionally as a shadow
+   * @param gl the WebGL rendering context to draw on
    * @param program the WebGL program we're using
-   * @param mvMatrix the model view matrix
+   * @param asShadow whether this should be drawn as a 3D object or a flat
+   * shadow
    */
-  public draw(
+  private drawMesh(
     gl: WebGLRenderingContext,
     program: WebGLProgram,
-    mvMatrix: mat4
+    asShadow = false
   ): void {
-    const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+    // set colors according to whether this is a shadow drawing or not
+    let diffuseProduct = new vec4([0, 0, 0, 1]);
+    let specularProduct = new vec4([0, 0, 0, 1]);
+    let ambientProduct = new vec4([0, 0, 0, 1]);
+    if (!asShadow) {
+      diffuseProduct = vec4.product(
+        vec4.product(lightDiffuse, materialDiffuse),
+        this.color
+      );
+      specularProduct = vec4.product(lightSpecular, materialDiffuse);
+      ambientProduct = vec4.product(
+        vec4.product(lightAmbient, materialAmbient),
+        this.color
+      );
+    }
 
     // buffer vertex data
     const pBuffer = gl.createBuffer();
@@ -162,40 +177,7 @@ export class MobileElement {
     gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vNormalPosition);
 
-    const scaleFactor =
-      1 /
-      Math.max(
-        this.extents.maxX - this.extents.minX,
-        this.extents.maxY - this.extents.minY,
-        this.extents.maxZ - this.extents.minZ
-      );
-    const transformedMatrix = mvMatrix
-      .copy()
-      // scale based on extents
-      .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]))
-      // apply a rotation to spin this shape
-      .rotate(
-        this.rotDir * this.rotSpeed * this.rotStep++,
-        new vec3([0, 1, 0])
-      );
-    if (transformedMatrix === null) throw new Error("Failed to rotate");
-
-    gl.uniformMatrix4fv(
-      modelMatrixLoc,
-      false,
-      Float32Array.from(transformedMatrix.all())
-    );
-
     // set lighting attributes
-    const diffuseProduct = vec4.product(
-      vec4.product(lightDiffuse, this.color),
-      this.color
-    );
-    const specularProduct = vec4.product(lightSpecular, materialDiffuse);
-    const ambientProduct = vec4.product(
-      vec4.product(lightAmbient, materialAmbient),
-      this.color
-    );
     gl.uniform4fv(
       gl.getUniformLocation(program, "diffuseProduct"),
       Float32Array.from(diffuseProduct.xyzw)
@@ -225,6 +207,91 @@ export class MobileElement {
     } else {
       gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length);
     }
+  }
+
+  private drawShadow(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram,
+    mvMatrix: mat4
+  ): void {
+    const shadowView = mvMatrix
+      .copy()
+      .translate(new vec3([0, 0, -2]))
+      .translate(new vec3([lightPosition.x, lightPosition.y, lightPosition.z]))
+      .multiply(
+        new mat4(
+          flatten([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, -1 / lightPosition.z],
+            [0, 0, 0, 0]
+          ])
+        )
+      )
+      .translate(
+        new vec3([-lightPosition.x, -lightPosition.y, -lightPosition.z])
+      );
+
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(program, "modelMatrix"),
+      false,
+      Float32Array.from(shadowView.all())
+    );
+    this.drawMesh(gl, program, true);
+  }
+
+  /**
+   * recursively draws this element and each of its children on the canvas
+   * @param gl the WebGL rendering context to draw to
+   * @param program the WebGL program we're using
+   * @param mvMatrix the model view matrix
+   */
+  public draw(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram,
+    mvMatrix: mat4
+  ): void {
+    const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+
+    const scaleFactor =
+      1 /
+      Math.max(
+        this.extents.maxX - this.extents.minX,
+        this.extents.maxY - this.extents.minY,
+        this.extents.maxZ - this.extents.minZ
+      );
+    const transformedMatrix = mvMatrix
+      .copy()
+      // scale based on extents
+      .scale(new vec3([scaleFactor, scaleFactor, scaleFactor]));
+
+    // draw shadows if necessary
+    if (GLOBALS.shadowsOn) {
+      this.drawShadow(gl, program, transformedMatrix);
+    }
+
+    transformedMatrix
+      // apply a rotation to spin this shape
+      .rotate(
+        this.rotDir * this.rotSpeed * this.rotStep++,
+        new vec3([0, 1, 0])
+      );
+    if (transformedMatrix === null) throw new Error("Failed to rotate");
+
+    gl.uniformMatrix4fv(
+      modelMatrixLoc,
+      false,
+      Float32Array.from(transformedMatrix.all())
+    );
+
+    // draw the mesh
+    this.drawMesh(gl, program, false);
+
+    const pBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+    const vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
 
     // draw top string
     if (this.parent !== undefined) {

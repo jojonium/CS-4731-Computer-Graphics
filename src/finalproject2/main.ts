@@ -41,7 +41,9 @@ export const GLOBALS = {
    * global variable used to store the ID of the animation callback so it can be
    * cancelled later
    */
-  callbackID: undefined as number | undefined
+  callbackID: undefined as number | undefined,
+  /** Whether or not to draw shadows */
+  shadowsOn: true
 };
 
 function main(): void {
@@ -57,6 +59,7 @@ function main(): void {
   mobile.nextRotSpeed = Math.PI / 360;
   mobile.addChild(new MobileElement(randMesh(), new vec4([1, 0.0, 0.0, 1])));
   mobile.addChild(new MobileElement(randMesh(), new vec4([0.98, 1, 0.07, 1])));
+  /*
   mobile.randomAdd(
     new MobileElement(randMesh(), new vec4([0.25, 0.92, 0.83, 1]))
   );
@@ -83,6 +86,7 @@ function main(): void {
   );
   mobile.randomAdd(new MobileElement(randMesh(), new vec4([1.0, 0, 0, 1])));
   mobile.randomAdd(new MobileElement(randMesh(), new vec4([0, 1.0, 0, 1])));
+  */
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -144,6 +148,9 @@ function main(): void {
     if (key === "m") {
       if (ev.shiftKey) mobile.calculateNormals(true);
       else mobile.calculateNormals(false);
+    }
+    if (key === "a") {
+      GLOBALS.shadowsOn = !GLOBALS.shadowsOn;
     }
   });
 

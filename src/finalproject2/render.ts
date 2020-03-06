@@ -43,14 +43,12 @@ export const render = (
   const s = 2 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
   modelView
     .scale(new vec3([s, s, s]))
-    .translate(new vec3([0, mobile.getTotalHeight() / 2, 0]));
+    .translate(new vec3([0, mobile.getTotalHeight() / 3, 0]));
 
   // draw environment
   const environmentView = modelView
     .copy()
-    .translate(
-      new vec3([0, -mobile.getTotalHeight() / 2, -mobile.getTotalWidth() * 2])
-    )
+    .translate(new vec3([0, 0, -mobile.getTotalWidth() * 2]))
     .scale(new vec3([6 / s, 6 / s, 6 / s]))
     .rotate(-Math.PI / 4, new vec3([0, 1, 0]));
   if (environmentView === null)
