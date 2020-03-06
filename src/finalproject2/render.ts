@@ -2,7 +2,7 @@ import mat4 from "./lib/tsm/mat4";
 import vec3 from "./lib/tsm/vec3";
 import { GLOBALS } from "./main";
 import { MobileElement } from "./MobileElement";
-import { drawFloor } from "./environment";
+import { drawEnvironment } from "./environment";
 
 /**
  * @param canvas the canvas to draw on
@@ -40,18 +40,23 @@ export const render = (
   const modelView = mat4.lookAt(eyeVec, lookVec, upVec);
 
   // scale and translate to fit the mobile
-  const s = 1.5 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
+  const s = 2 / Math.max(mobile.getTotalWidth(), mobile.getTotalHeight());
   modelView
     .scale(new vec3([s, s, s]))
     .translate(new vec3([0, mobile.getTotalHeight() / 2, 0]));
 
-  // draw floor
-  const floorView = modelView
+  // draw environment
+  const environmentView = modelView
     .copy()
-    .translate(new vec3([0, -mobile.getTotalHeight() * 0.8, 0]))
-    .scale(new vec3([2 / s, 2 / s, 2 / s]));
+    .translate(
+      new vec3([0, -mobile.getTotalHeight() / 2, -mobile.getTotalWidth() * 2])
+    )
+    .scale(new vec3([6 / s, 6 / s, 6 / s]))
+    .rotate(-Math.PI / 4, new vec3([0, 1, 0]));
+  if (environmentView === null)
+    throw new Error("Couldn't rotate environment view");
   gl.enableVertexAttribArray(gl.getAttribLocation(program, "vTexCoord"));
-  drawFloor(gl, textureProgram, floorView);
+  drawEnvironment(gl, textureProgram, environmentView);
 
   // disable texture mode
   gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), -1.0);

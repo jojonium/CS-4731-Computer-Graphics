@@ -1,4 +1,4 @@
-import { createTexture, flatten, normal } from "./helpers";
+import { flatten } from "./helpers";
 import mat4 from "./lib/tsm/mat4";
 import { quad } from "./models";
 
@@ -12,17 +12,6 @@ const floorPointsData = Float32Array.from(
   flatten(flatten(floorTriangles).map(vec => [vec.x, vec.y, vec.z, 1]))
 );
 
-const floorNormalsData = Float32Array.from(
-  flatten(
-    flatten(
-      floorTriangles.map(poly => {
-        const n = normal(poly).scale(-1);
-        return poly.map(() => [n.x, n.y, n.z, 0]);
-      })
-    )
-  )
-);
-
 const floorTexCoordsData = Float32Array.from(
   flatten([
     [0, 0],
@@ -34,13 +23,38 @@ const floorTexCoordsData = Float32Array.from(
   ])
 );
 
+const lw = quad(5, 4, 0, 1); // left wall
+const bw = quad(6, 7, 4, 5); // back wall
+const wallTriangles = [
+  [lw[0], lw[1], lw[2]],
+  [lw[3], lw[4], lw[5]],
+  [bw[0], bw[1], bw[2]],
+  [bw[3], bw[4], bw[5]]
+];
+
+const wallPointsData = Float32Array.from(
+  flatten(flatten(wallTriangles).map(vec => [vec.x, vec.y, vec.z, 1]))
+);
+
+const wallTexCoords = [
+  [0, 0],
+  [0, 1],
+  [1, 1],
+  [0, 0],
+  [1, 1],
+  [1, 0]
+];
+const wallTexCoordsData = Float32Array.from(
+  flatten(wallTexCoords.concat(wallTexCoords))
+);
+
 /**
- * draws the floor of the world
+ * draws the floor and walls of the world
  * @param gl the WebGL rendering context to draw to
  * @param program the WebGL program we're using to draw textures
  * @param mvMatrix the model view matrix
  */
-export const drawFloor = (
+export const drawEnvironment = (
   gl: WebGLRenderingContext,
   program: WebGLProgram,
   mvMatrix: mat4
@@ -48,15 +62,12 @@ export const drawFloor = (
   const modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
   gl.uniformMatrix4fv(modelMatrixLoc, false, Float32Array.from(mvMatrix.all()));
 
+  // do floor first
+
   // use grass texture
-  const grassImg = document.getElementById("grass") as HTMLImageElement;
-  if (grassImg === null) throw new Error("couldn't get grass image");
-  createTexture(gl, program, 0, grassImg);
   gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 0.0);
 
-  // colors
-
-  // vertices
+  // buffer vertices
   const vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, floorPointsData, gl.STATIC_DRAW);
@@ -64,15 +75,7 @@ export const drawFloor = (
   gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vPosition);
 
-  // normals
-  const vNormal = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-  gl.bufferData(gl.ARRAY_BUFFER, floorNormalsData, gl.STATIC_DRAW);
-  const vNormalPosition = gl.getAttribLocation(program, "vNormal");
-  gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vNormalPosition);
-
-  // texture coordinates
+  // buffer texture coordinates
   const tBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, floorTexCoordsData, gl.STATIC_DRAW);
@@ -81,5 +84,19 @@ export const drawFloor = (
   gl.enableVertexAttribArray(tvTexCoord);
 
   gl.drawArrays(gl.TRIANGLES, 0, f.length);
-};
 
+  // now do walls
+
+  // use stone texture
+  gl.uniform1f(gl.getUniformLocation(program, "vTextureSelector"), 1.0);
+
+  // buffer vertices
+  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, wallPointsData, gl.STATIC_DRAW);
+
+  // buffer texture coordinates
+  gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, wallTexCoordsData, gl.STATIC_DRAW);
+
+  gl.drawArrays(gl.TRIANGLES, 0, bw.length + lw.length);
+};

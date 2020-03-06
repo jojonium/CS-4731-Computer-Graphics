@@ -3,7 +3,7 @@
  */
 
 import { createFileInput, getInput, parseFileText } from "./file";
-import { createCanvas, placeholderTexture } from "./helpers";
+import { createCanvas, placeholderTexture, createTexture } from "./helpers";
 import { initShaders } from "./lib/initShaders";
 import vec4 from "./lib/tsm/vec4";
 import { setupWebGL } from "./lib/webgl-utils";
@@ -55,38 +55,34 @@ function main(): void {
   // create the mobile
   const mobile = new MobileElement(randMesh(), new vec4([0.0, 0.0, 1.0, 1]));
   mobile.nextRotSpeed = Math.PI / 360;
-  mobile.randomAdd(new MobileElement(randMesh(), new vec4([1, 0.0, 0.0, 1])));
+  mobile.addChild(new MobileElement(randMesh(), new vec4([1, 0.0, 0.0, 1])));
+  mobile.addChild(new MobileElement(randMesh(), new vec4([0.98, 1, 0.07, 1])));
   mobile.randomAdd(
-    new MobileElement(getSphere(), new vec4([0.98, 1, 0.07, 1]))
-  );
-  /*
-  mobile.randomAdd(
-    new MobileElement(getCube(), new vec4([0.25, 0.92, 0.83, 1]))
+    new MobileElement(randMesh(), new vec4([0.25, 0.92, 0.83, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getSphere(), new vec4([0.32, 0.28, 0.61, 1]))
+    new MobileElement(randMesh(), new vec4([0.32, 0.28, 0.61, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getCube(), new vec4([0.35, 0.76, 0.76, 1]))
+    new MobileElement(randMesh(), new vec4([0.35, 0.76, 0.76, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getCube(), new vec4([0.75, 0.87, 0.52, 1]))
+    new MobileElement(randMesh(), new vec4([0.75, 0.87, 0.52, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getSphere(), new vec4([0.49, 0.87, 0.39, 1]))
+    new MobileElement(randMesh(), new vec4([0.49, 0.87, 0.39, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getSphere(), new vec4([0.89, 0.71, 0.02, 1]))
+    new MobileElement(randMesh(), new vec4([0.89, 0.71, 0.02, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getSphere(), new vec4([0.03, 0.3, 0.38, 1]))
+    new MobileElement(randMesh(), new vec4([0.03, 0.3, 0.38, 1]))
   );
   mobile.randomAdd(
-    new MobileElement(getCube(), new vec4([0.41, 0.92, 0.82, 1]))
+    new MobileElement(randMesh(), new vec4([0.41, 0.92, 0.82, 1]))
   );
-  mobile.randomAdd(new MobileElement(getSphere(), new vec4([1.0, 0, 0, 1])));
-  mobile.randomAdd(new MobileElement(getCube(), new vec4([0, 1.0, 0, 1])));
- */
+  mobile.randomAdd(new MobileElement(randMesh(), new vec4([1.0, 0, 0, 1])));
+  mobile.randomAdd(new MobileElement(randMesh(), new vec4([0, 1.0, 0, 1])));
 
   // get the rendering context for WebGL
   const gl = setupWebGL(canvas) as WebGLRenderingContext;
@@ -101,8 +97,14 @@ function main(): void {
   gl.cullFace(gl.BACK);
   gl.enable(gl.DEPTH_TEST);
 
-  // set up placeholder textures while other tetxures load
+  // set up placeholder texture and load other textures
   placeholderTexture(gl);
+  const grassImg = document.getElementById("grass") as HTMLImageElement;
+  if (grassImg === null) throw new Error("couldn't get grass image");
+  createTexture(gl, program, 0, grassImg);
+  const stonesImg = document.getElementById("stones") as HTMLImageElement;
+  if (grassImg === null) throw new Error("couldn't get stones image");
+  createTexture(gl, program, 1, stonesImg);
 
   // angle of the spotlight
   let phi = 0.9;
