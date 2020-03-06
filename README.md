@@ -71,3 +71,11 @@ other objects in the scene.
 The scene also implements lighting. There is a spotlight, the angle of which
 can be adjusted by pressing "P" and "p". You can also switch between smooth
 lighting (by pressing "M") and Gouraud lighting (by pressing "m")
+
+## Final Project, Part 2
+
+Part 2 of the Final Project builds off of the first part, but adds several
+graphical features. There is now a textured environment consisting of walls and
+a floor. Press "b" to toggle drawing the environment with textures or flat
+colors. Press "a" to turn shadows on or off. You can also make the objects of
+the mobile reflective (with "c") or refractive (with "d").
